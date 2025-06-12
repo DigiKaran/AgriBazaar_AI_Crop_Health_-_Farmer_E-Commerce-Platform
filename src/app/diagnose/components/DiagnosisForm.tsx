@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, type FormEvent } from 'react';
@@ -126,13 +127,14 @@ export default function DiagnosisForm() {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-      <Card className="shadow-xl rounded-xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl"><UploadCloud className="text-primary" /> Upload Crop Image</CardTitle>
-          <CardDescription>Provide an image and description of the affected crop.</CardDescription>
-        </CardHeader>
-        <Form {...form}>
+    <Form {...form}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        <Card className="shadow-xl rounded-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-2xl"><UploadCloud className="text-primary" /> Upload Crop Image</CardTitle>
+            <CardDescription>Provide an image and description of the affected crop.</CardDescription>
+          </CardHeader>
+          {/* The <form> tag is for the native HTML form submission behavior */}
           <form onSubmit={form.handleSubmit(onSubmitDiagnosis)} className="space-y-6">
             <CardContent className="space-y-6">
               <FormField
@@ -179,82 +181,82 @@ export default function DiagnosisForm() {
               </Button>
             </CardFooter>
           </form>
-        </Form>
-      </Card>
-
-      {(diagnosis || preventativeMeasures || error) && (
-        <Card className="shadow-xl rounded-xl">
-          <CardHeader>
-            <CardTitle className="text-2xl">Analysis Results</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {error && (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {diagnosis && (
-              <div className="space-y-4 p-4 border rounded-lg bg-background">
-                <h3 className="font-headline text-xl flex items-center gap-2"><CheckCircle2 className="text-green-500"/>Diagnosis</h3>
-                <p><strong>Disease:</strong> {diagnosis.disease}</p>
-                <p><strong>Confidence:</strong> {(diagnosis.confidence * 100).toFixed(0)}%</p>
-                <p><strong>Treatment Recommendations:</strong></p>
-                <p className="whitespace-pre-wrap text-sm">{diagnosis.treatmentRecommendations}</p>
-                
-                {!preventativeMeasures && (
-                  <div className="mt-6 pt-4 border-t">
-                     <h4 className="font-headline text-lg mb-2">Additional Options</h4>
-                     <FormField
-                        control={form.control}
-                        name="cropType"
-                        render={({ field }) => (
-                          <FormItem className="mb-2">
-                            <FormLabel>Crop Type (for prevention tips)</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
-                          </FormItem>
-                        )}
-                      />
-                     <FormField
-                        control={form.control}
-                        name="season"
-                        render={({ field }) => (
-                          <FormItem className="mb-2">
-                            <FormLabel>Current Season</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="location"
-                        render={({ field }) => (
-                          <FormItem className="mb-4">
-                            <FormLabel>Location</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    <Button onClick={handleGetPreventativeMeasures} disabled={isLoadingPreventative} variant="outline" className="w-full">
-                      {isLoadingPreventative ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-                      Get Preventative Measures
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {preventativeMeasures && (
-              <div className="space-y-4 p-4 border rounded-lg bg-background mt-4">
-                <h3 className="font-headline text-xl flex items-center gap-2"><ShieldCheck className="text-blue-500"/>Preventative Measures</h3>
-                <p className="whitespace-pre-wrap text-sm">{preventativeMeasures.measures}</p>
-              </div>
-            )}
-          </CardContent>
         </Card>
-      )}
-    </div>
+
+        {(diagnosis || preventativeMeasures || error) && (
+          <Card className="shadow-xl rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-2xl">Analysis Results</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {diagnosis && (
+                <div className="space-y-4 p-4 border rounded-lg bg-background">
+                  <h3 className="font-headline text-xl flex items-center gap-2"><CheckCircle2 className="text-green-500"/>Diagnosis</h3>
+                  <p><strong>Disease:</strong> {diagnosis.disease}</p>
+                  <p><strong>Confidence:</strong> {(diagnosis.confidence * 100).toFixed(0)}%</p>
+                  <p><strong>Treatment Recommendations:</strong></p>
+                  <p className="whitespace-pre-wrap text-sm">{diagnosis.treatmentRecommendations}</p>
+                  
+                  {!preventativeMeasures && (
+                    <div className="mt-6 pt-4 border-t">
+                       <h4 className="font-headline text-lg mb-2">Additional Options</h4>
+                       <FormField
+                          control={form.control}
+                          name="cropType"
+                          render={({ field }) => (
+                            <FormItem className="mb-2">
+                              <FormLabel>Crop Type (for prevention tips)</FormLabel>
+                              <FormControl><Input {...field} /></FormControl>
+                            </FormItem>
+                          )}
+                        />
+                       <FormField
+                          control={form.control}
+                          name="season"
+                          render={({ field }) => (
+                            <FormItem className="mb-2">
+                              <FormLabel>Current Season</FormLabel>
+                              <FormControl><Input {...field} /></FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="location"
+                          render={({ field }) => (
+                            <FormItem className="mb-4">
+                              <FormLabel>Location</FormLabel>
+                              <FormControl><Input {...field} /></FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      <Button onClick={handleGetPreventativeMeasures} disabled={isLoadingPreventative} variant="outline" className="w-full">
+                        {isLoadingPreventative ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+                        Get Preventative Measures
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {preventativeMeasures && (
+                <div className="space-y-4 p-4 border rounded-lg bg-background mt-4">
+                  <h3 className="font-headline text-xl flex items-center gap-2"><ShieldCheck className="text-blue-500"/>Preventative Measures</h3>
+                  <p className="whitespace-pre-wrap text-sm">{preventativeMeasures.measures}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </Form>
   );
 }
