@@ -40,14 +40,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setCurrentUser(user);
       if (user) {
         try {
+          console.log("AuthContext: User authenticated, attempting to fetch profile for UID:", user.uid);
           const profile = await getUserProfile(user.uid);
           setUserProfile(profile);
-        } catch (error) {
-          console.error("Failed to fetch user profile:", error);
-          setUserProfile(null);
+          console.log("AuthContext: User profile fetched successfully:", profile);
+        } catch (error: any) {
+          console.error("AuthContext: Failed to fetch user profile. UID:", user.uid, "Raw Error Object:", error);
+          if (error.code) {
+            console.error("AuthContext: Firebase Error Code:", error.code);
+          }
+          if (error.message) {
+            console.error("AuthContext: Firebase Error Message:", error.message);
+          }
+          setUserProfile(null); // Ensure profile is null on error
         }
       } else {
         setUserProfile(null);
+        console.log("AuthContext: No user authenticated or user logged out.");
       }
       setLoading(false);
     });
