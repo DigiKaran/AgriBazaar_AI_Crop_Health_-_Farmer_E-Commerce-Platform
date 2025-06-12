@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { MapPin, Cloud, Sun, Wind, Droplets, Lightbulb, Thermometer, Loader2, AlertTriangle, Search, LocateFixed, CalendarDays, Zap } from 'lucide-react';
+import { MapPin, Cloud, Sun, Wind, Droplets, Lightbulb, Thermometer, Loader2, AlertTriangle, Search, LocateFixed, CalendarDays, Zap, CloudSun, CloudRain, CloudDrizzle } from 'lucide-react';
 import type { WeatherData, LocalizedFarmingTip, LocalizedFarmingTipsOutput } from '@/types';
 import { getLocalizedFarmingTipsAction } from '@/lib/actions';
 import { cn } from '@/lib/utils';
