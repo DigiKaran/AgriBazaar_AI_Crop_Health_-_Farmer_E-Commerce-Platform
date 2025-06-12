@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, type FormEvent } from 'react';
@@ -36,7 +37,7 @@ export default function ChatInterface() {
     setMessages([
       { 
         id: Date.now().toString(), 
-        text: "Hello! I'm AgriBot, your AI farming assistant. How can I help you today?", 
+        text: "Namaste! I'm AgriBot, your AI farming assistant for India. How can I help you today?", 
         sender: 'bot',
         timestamp: new Date()
       }
@@ -57,11 +58,11 @@ export default function ChatInterface() {
     setInputValue('');
     setIsLoading(true);
 
-    // Mock bot response
+    // Mock bot response - In a real app, this would call your Genkit flow
     setTimeout(() => {
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: `Thanks for your message: "${userMessage.text}". I'm still learning, but I'll do my best to help! For complex queries, please consult a human expert.`,
+        text: `Thank you for your message: "${userMessage.text}". I'm here to assist with queries related to Indian agriculture. For complex issues, please consult a local expert.`,
         sender: 'bot',
         timestamp: new Date()
       };

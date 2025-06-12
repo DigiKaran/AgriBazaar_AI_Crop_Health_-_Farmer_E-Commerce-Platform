@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview A crop disease diagnosis AI agent.
+ * @fileOverview A crop disease diagnosis AI agent, tailored for Indian agriculture.
  *
  * - diagnoseCropDisease - A function that handles the crop disease diagnosis process.
  * - DiagnoseCropDiseaseInput - The input type for the diagnoseCropDisease function.
@@ -18,17 +18,17 @@ const DiagnoseCropDiseaseInputSchema = z.object({
     .describe(
       "A photo of a crop, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
-  description: z.string().describe('The description of the crop.'),
+  description: z.string().describe('The description of the crop, including any observed symptoms and the region in India if known.'),
 });
 export type DiagnoseCropDiseaseInput = z.infer<typeof DiagnoseCropDiseaseInputSchema>;
 
 const DiagnoseCropDiseaseOutputSchema = z.object({
   diagnosis: z.object({
-    disease: z.string().describe('The identified disease of the crop.'),
+    disease: z.string().describe('The identified disease of the crop, common in Indian agriculture.'),
     confidence: z.number().describe('The confidence level of the diagnosis (0-1).'),
     treatmentRecommendations: z
       .string()
-      .describe('Recommendations for treating the identified disease.'),
+      .describe('Recommendations for treating the identified disease, considering practices suitable for India.'),
   }),
 });
 export type DiagnoseCropDiseaseOutput = z.infer<typeof DiagnoseCropDiseaseOutputSchema>;
@@ -41,12 +41,12 @@ const prompt = ai.definePrompt({
   name: 'diagnoseCropDiseasePrompt',
   input: {schema: DiagnoseCropDiseaseInputSchema},
   output: {schema: DiagnoseCropDiseaseOutputSchema},
-  prompt: `You are a highly accurate expert agricultural botanist specializing in diagnosing crop diseases with a target accuracy of 90% or higher. Analyze the following information and provide a precise diagnosis, your confidence level (a number between 0 and 1 representing your certainty), and detailed treatment recommendations.
+  prompt: `You are a highly accurate expert agricultural botanist specializing in diagnosing crop diseases common in India, with a target accuracy of 90% or higher. Analyze the following information and provide a precise diagnosis, your confidence level (a number between 0 and 1 representing your certainty), and detailed treatment recommendations suitable for Indian farming conditions. Consider common Indian crops like rice, wheat, cotton, sugarcane, pulses, etc.
 
 Crop Description: {{{description}}}
 Crop Photo: {{media url=photoDataUri}}
 
-Your response must include the identified disease, your confidence in this diagnosis (e.g., 0.9 for 90% confidence), and actionable treatment steps. If the image does not clearly depict a crop, or if you cannot determine the disease with reasonable confidence, please state that clearly.`,
+Your response must include the identified disease, your confidence in this diagnosis (e.g., 0.9 for 90% confidence), and actionable treatment steps relevant to Indian agricultural practices. If the image does not clearly depict a crop, or if you cannot determine the disease with reasonable confidence, please state that clearly.`,
 });
 
 const diagnoseCropDiseaseFlow = ai.defineFlow(

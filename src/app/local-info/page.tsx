@@ -1,45 +1,46 @@
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MapPin, Cloud, Sun, Wind, Droplets, Lightbulb, CalendarDays } from 'lucide-react';
+import { MapPin, CloudRain, Sun, Wind, Droplets, Lightbulb, CalendarDays, Thermometer } from 'lucide-react'; // Added CloudRain, Thermometer
 import type { Metadata } from 'next';
 import Image from 'next/image';
 
 export const metadata: Metadata = {
-  title: 'Local Farming Information - AgriCheck',
-  description: 'Access localized weather forecasts and tailored farming tips for your region.',
+  title: 'Local Farming Information - AgriCheck India',
+  description: 'Access localized weather forecasts and tailored farming tips for your region in India.',
 };
 
-// Mock data - In a real app, this would come from APIs or user input
-const mockLocation = "Green Valley Farms, California";
+// Mock data - Tailored for India
+const mockLocation = "Wardha District, Maharashtra, India";
 const mockWeather = {
-  condition: "Sunny with partial clouds",
-  temperature: "28°C",
-  humidity: "55%",
-  wind: "12 km/h NW",
-  icon: <Sun className="h-12 w-12 text-yellow-500" />,
-  dataAiHint: "sunny farm"
+  condition: "Cloudy with chance of monsoon showers",
+  temperature: "29°C",
+  humidity: "78%",
+  wind: "15 km/h SW",
+  icon: <CloudRain className="h-12 w-12 text-blue-500" />,
+  dataAiHint: "monsoon farm india"
 };
 
 const farmingTips = [
   {
     id: '1',
-    title: 'Optimal Watering Schedule',
-    content: 'During sunny spells like today, ensure deep watering early in the morning or late in the evening to minimize evaporation. Check soil moisture 2 inches deep before watering.',
+    title: 'Monsoon Season Water Management',
+    content: 'During the monsoon, ensure proper drainage in fields to prevent waterlogging for crops like cotton and soybean. For rice paddies, maintain adequate water levels. Harvest rainwater where possible.',
     icon: <Droplets className="h-6 w-6 text-blue-500" />,
-    category: "Water Management"
+    category: "Water Management (Monsoon)"
   },
   {
     id: '2',
-    title: 'Pest Monitoring',
-    content: 'Warm weather can increase pest activity. Regularly inspect crops for early signs of infestation, especially undersides of leaves.',
+    title: 'Pest & Disease Watch: Kharif Crops',
+    content: 'Increased humidity during monsoon can lead to fungal diseases and pest attacks on Kharif crops. Regularly inspect for signs of stem borer in rice or aphids in cotton. Use neem-based pesticides as a preventive.',
     icon: <Lightbulb className="h-6 w-6 text-yellow-600" />, // Using Lightbulb for 'insight'
-    category: "Pest Control"
+    category: "Pest Control (Kharif)"
   },
   {
     id: '3',
-    title: 'Seasonal Planting Guide',
-    content: 'For your location and current season (Summer), consider planting heat-tolerant crops like tomatoes, peppers, and cucumbers. Prepare soil with compost for best results.',
+    title: 'Kharif Season Planting & Care',
+    content: 'In Maharashtra, for the Kharif season (June-October), this is a good time for sowing cotton, soybean, tur (pigeon pea), and rice. Ensure use of certified seeds and balanced fertilization.',
     icon: <CalendarDays className="h-6 w-6 text-green-600" />,
-    category: "Planting"
+    category: "Planting (Kharif)"
   },
 ];
 
@@ -50,7 +51,7 @@ export default function LocalInfoPage() {
         <h1 className="text-4xl sm:text-5xl font-headline tracking-tight">Local Farming Information</h1>
         <div className="flex items-center justify-center mt-4 text-lg text-muted-foreground">
           <MapPin className="h-5 w-5 mr-2 text-primary" />
-          <span>{mockLocation} (Mock Data)</span>
+          <span>{mockLocation} (Sample Data for India)</span>
         </div>
       </header>
 
@@ -58,7 +59,7 @@ export default function LocalInfoPage() {
         <Card className="shadow-xl rounded-xl flex flex-col">
           <CardHeader>
             <CardTitle className="text-2xl flex items-center gap-2">
-              <Cloud className="text-primary"/> Current Weather
+              <Thermometer className="text-primary"/> Current Weather
             </CardTitle>
             <CardDescription>Today's forecast for {mockLocation}</CardDescription>
           </CardHeader>
@@ -75,7 +76,7 @@ export default function LocalInfoPage() {
               <p><strong className="font-medium">Wind:</strong> {mockWeather.wind}</p>
             </div>
             <div className="mt-auto pt-4">
-                <Image src="https://placehold.co/600x300.png" alt="Weather relevant image" width={600} height={300} className="rounded-lg aspect-[2/1] object-cover" data-ai-hint={mockWeather.dataAiHint}/>
+                <Image src="https://placehold.co/600x300.png" alt="Weather relevant image for Indian farm" width={600} height={300} className="rounded-lg aspect-[2/1] object-cover" data-ai-hint={mockWeather.dataAiHint}/>
             </div>
           </CardContent>
         </Card>
@@ -85,7 +86,7 @@ export default function LocalInfoPage() {
             <CardTitle className="text-2xl flex items-center gap-2">
                 <Lightbulb className="text-primary"/> Today's Top Tip
             </CardTitle>
-            <CardDescription>A key recommendation for today.</CardDescription>
+            <CardDescription>A key recommendation for today in your area.</CardDescription>
           </CardHeader>
           <CardContent className="flex-grow flex flex-col justify-center items-center text-center p-6 bg-accent/10 rounded-b-xl">
              {farmingTips[0].icon}
@@ -96,7 +97,7 @@ export default function LocalInfoPage() {
       </div>
 
       <div>
-        <h2 className="text-3xl font-headline mb-6 text-center md:text-left">Seasonal Farming Tips</h2>
+        <h2 className="text-3xl font-headline mb-6 text-center md:text-left">Seasonal Farming Tips for India</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {farmingTips.map((tip) => (
             <Card key={tip.id} className="shadow-lg hover:shadow-xl transition-shadow rounded-xl overflow-hidden">
