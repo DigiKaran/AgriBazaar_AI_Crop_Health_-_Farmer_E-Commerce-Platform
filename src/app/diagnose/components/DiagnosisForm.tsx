@@ -11,9 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, UploadCloud, AlertTriangle, CheckCircle2, Brain, ShieldCheck, Save } from 'lucide-react';
+import { Loader2, UploadCloud, AlertTriangle, CheckCircle2, Brain, ShieldCheck, UserCheck, MessageSquareWarning } from 'lucide-react';
 import type { DiagnosisResult, PreventativeMeasuresResult } from '@/types';
-import { diagnoseCropAction, generatePreventativeMeasuresAction } from '@/lib/actions';
+import { diagnoseCropAction, generatePreventativeMeasuresAction, requestExpertReviewAction } from '@/lib/actions';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +28,11 @@ const diagnosisFormSchema = z.object({
 
 type DiagnosisFormValues = z.infer<typeof diagnosisFormSchema>;
 
+interface DiagnosisState extends DiagnosisResult {
+  historyId?: string;
+  expertReviewRequested?: boolean;
+}
+
 const fileToDataUri = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -38,10 +43,11 @@ const fileToDataUri = (file: File): Promise<string> => {
 };
 
 export default function DiagnosisForm() {
-  const [diagnosis, setDiagnosis] = useState<DiagnosisResult | null>(null);
+  const [diagnosis, setDiagnosis] = useState<DiagnosisState | null>(null);
   const [preventativeMeasures, setPreventativeMeasures] = useState<PreventativeMeasuresResult | null>(null);
   const [isLoadingDiagnosis, setIsLoadingDiagnosis] = useState(false);
   const [isLoadingPreventative, setIsLoadingPreventative] = useState(false);
+  const [isRequestingExpert, setIsRequestingExpert] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const { currentUser } = useAuth();
@@ -100,8 +106,8 @@ export default function DiagnosisForm() {
 
       if (result.error) {
         setError(result.error);
-        if (result.diagnosis) { // Partial success: AI worked, DB failed
-            setDiagnosis(result.diagnosis);
+        if (result.diagnosis) { 
+            setDiagnosis({...result.diagnosis, historyId: result.historyId});
              toast({
                 variant: "destructive",
                 title: "Diagnosis Complete (Save Failed)",
@@ -109,13 +115,12 @@ export default function DiagnosisForm() {
             });
         }
       } else if (result.diagnosis) {
-        setDiagnosis(result.diagnosis);
+        setDiagnosis({...result.diagnosis, historyId: result.historyId, expertReviewRequested: false });
         toast({
             title: "Diagnosis Successful",
             description: `Identified: ${result.diagnosis.disease}. History saved.`,
             action: result.historyId ? <CheckCircle2 className="text-green-500" /> : undefined,
         });
-        // Update cropType if possible from diagnosis or keep user input
         if (result.diagnosis.disease && !result.diagnosis.disease.toLowerCase().includes("unknown")) {
              form.setValue('cropType', result.diagnosis.disease.split(' ')[0] || data.cropType || "General Crop");
         }
@@ -143,28 +148,38 @@ export default function DiagnosisForm() {
       const result = await generatePreventativeMeasuresAction({ cropType, season, location });
       if ('error' in result) {
         setError(result.error);
-         toast({
-            variant: "destructive",
-            title: "Failed",
-            description: result.error,
-        });
+         toast({ variant: "destructive", title: "Failed", description: result.error });
       } else {
         setPreventativeMeasures({ measures: result.preventativeMeasures });
-        toast({
-            title: "Preventative Measures Generated",
-            description: "Tips are ready for you.",
-        });
+        toast({ title: "Preventative Measures Generated", description: "Tips are ready for you." });
       }
     } catch (err) {
       setError('Failed to fetch preventative measures.');
       console.error(err);
-       toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not fetch preventative measures.",
-        });
+       toast({ variant: "destructive", title: "Error", description: "Could not fetch preventative measures." });
     } finally {
       setIsLoadingPreventative(false);
+    }
+  };
+
+  const handleRequestExpertReview = async () => {
+    if (!diagnosis?.historyId || !currentUser?.uid) {
+        toast({ variant: "destructive", title: "Error", description: "Cannot request review without a saved diagnosis or user session." });
+        return;
+    }
+    setIsRequestingExpert(true);
+    try {
+        const result = await requestExpertReviewAction(diagnosis.historyId, currentUser.uid);
+        if (result.success) {
+            toast({ title: "Success", description: result.message });
+            setDiagnosis(prev => prev ? {...prev, expertReviewRequested: true} : null);
+        } else {
+            toast({ variant: "destructive", title: "Failed", description: result.error });
+        }
+    } catch (err) {
+        toast({ variant: "destructive", title: "Error", description: "Could not request expert review." });
+    } finally {
+        setIsRequestingExpert(false);
     }
   };
 
@@ -247,6 +262,27 @@ export default function DiagnosisForm() {
                   <p><strong>Treatment Recommendations:</strong></p>
                   <p className="whitespace-pre-wrap text-sm">{diagnosis.treatmentRecommendations}</p>
                   
+                  {diagnosis.historyId && currentUser && (
+                    <div className="mt-4 pt-4 border-t">
+                      {diagnosis.expertReviewRequested ? (
+                        <div className="flex items-center gap-2 text-sm text-blue-600 p-2 bg-blue-50 rounded-md">
+                           <UserCheck className="h-5 w-5"/> 
+                           <span>Expert review has been requested. You will be notified.</span>
+                        </div>
+                      ) : (
+                        <Button 
+                          onClick={handleRequestExpertReview} 
+                          disabled={isRequestingExpert} 
+                          variant="outline" 
+                          className="w-full"
+                        >
+                          {isRequestingExpert ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquareWarning className="mr-2 h-4 w-4" />}
+                          Not Satisfied? Request Expert Review
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
                   {!preventativeMeasures && (
                     <div className="mt-6 pt-4 border-t">
                        <h4 className="font-headline text-lg mb-2">Additional Options</h4>

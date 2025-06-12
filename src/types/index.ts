@@ -20,13 +20,15 @@ export interface PreventativeMeasuresResult {
   measures: string;
 }
 
+export type UserRole = 'farmer' | 'admin' | 'expert';
+
 export interface UserProfile {
   uid: string;
   email: string | null;
   displayName?: string | null;
   photoURL?: string | null;
   createdAt: any; 
-  // Add other fields as needed
+  role: UserRole;
 }
 
 export interface WeatherData {
@@ -58,6 +60,9 @@ export interface DiagnosisHistoryEntry {
   description: string;
   diagnosis: DiagnosisResult;
   timestamp: any; // Firestore serverTimestamp
+  expertReviewRequested?: boolean;
+  expertDiagnosis?: string | null;
+  status?: 'pending_ai' | 'ai_diagnosed' | 'pending_expert' | 'expert_reviewed' | 'closed';
 }
 
 export interface ChatMessage {

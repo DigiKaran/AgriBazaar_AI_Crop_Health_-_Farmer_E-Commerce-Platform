@@ -13,7 +13,8 @@ import type { UserProfile } from '@/types';
 export const signUpWithEmailPassword = async (email: string, password: string): Promise<UserCredential> => {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   if (userCredential.user) {
-    await createUserProfileDocument(userCredential.user);
+    // New users default to 'farmer' role
+    await createUserProfileDocument(userCredential.user, { role: 'farmer' });
   }
   return userCredential;
 };
@@ -41,6 +42,7 @@ export const createUserProfileDocument = async (user: FirebaseUser, additionalDa
         email,
         displayName: displayName || email?.split('@')[0] || 'User',
         createdAt,
+        role: 'farmer', // Default role for new profiles
         ...additionalData,
       });
     } catch (error) {
@@ -55,7 +57,9 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
   const userRef = doc(db, `users/${uid}`);
   const snapshot = await getDoc(userRef);
   if (snapshot.exists()) {
-    return snapshot.data() as UserProfile;
+    // Ensure role is present, default to 'farmer' if somehow missing for older docs
+    const data = snapshot.data();
+    return { role: 'farmer', ...data } as UserProfile;
   }
   return null;
 };

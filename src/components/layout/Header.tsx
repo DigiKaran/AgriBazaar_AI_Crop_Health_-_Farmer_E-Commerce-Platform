@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Leaf, Globe, Menu, LogOut, LogIn, UserPlus } from 'lucide-react';
+import { Leaf, Globe, Menu, LogOut, LogIn, UserPlus, UserCog, ShieldAlert, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -26,20 +26,31 @@ const Logo = () => (
   </Link>
 );
 
-const NavLinks = ({ className, itemClassName, onLinkClick }: { className?: string; itemClassName?: string; onLinkClick?: () => void; }) => (
-  <nav className={cn("items-center space-x-4 lg:space-x-6", className)}>
-    {navItems.map((item) => (
-      <Link
-        key={item.label}
-        href={item.href}
-        onClick={onLinkClick}
-        className={cn("text-sm font-medium text-foreground/80 hover:text-primary transition-colors", itemClassName)}
-      >
-        {item.label}
-      </Link>
-    ))}
-  </nav>
-);
+const NavLinks = ({ className, itemClassName, onLinkClick, userRole }: { className?: string; itemClassName?: string; onLinkClick?: () => void; userRole?: string | null; }) => {
+  const allNavItems = [...navItems];
+  if (userRole === 'admin') {
+    allNavItems.push({ href: '/admin', label: 'Admin Panel' });
+  }
+  if (userRole === 'expert') {
+    allNavItems.push({ href: '/expert', label: 'Expert Dashboard' });
+  }
+
+  return (
+    <nav className={cn("items-center space-x-4 lg:space-x-6", className)}>
+      {allNavItems.map((item) => (
+        <Link
+          key={item.label}
+          href={item.href}
+          onClick={onLinkClick}
+          className={cn("text-sm font-medium text-foreground/80 hover:text-primary transition-colors", itemClassName)}
+        >
+          {item.label}
+        </Link>
+      ))}
+    </nav>
+  );
+};
+
 
 export default function Header() {
   const { currentUser, userProfile, logout, loading } = useAuth();
@@ -48,17 +59,15 @@ export default function Header() {
   const handleLogout = async () => {
     try {
       await logout();
-      // Optional: redirect or show toast
     } catch (error) {
       console.error("Logout failed", error);
-      // Optional: show error toast
     }
   };
 
   const getInitials = (name?: string | null) => {
     if (!name) return 'U';
     const parts = name.split(' ');
-    if (parts.length > 1) {
+    if (parts.length > 1 && parts[0] && parts[parts.length - 1]) {
       return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
@@ -81,6 +90,7 @@ export default function Header() {
             <p className="text-xs leading-none text-muted-foreground">
               {currentUser?.email}
             </p>
+            {userProfile?.role && <p className="text-xs leading-none text-muted-foreground capitalize">Role: {userProfile.role}</p>}
           </div>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -97,9 +107,8 @@ export default function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         <Logo />
         
-        {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-4">
-          <NavLinks />
+          <NavLinks userRole={userProfile?.role} />
           {loading ? null : currentUser ? (
             <UserAvatarButton />
           ) : (
@@ -128,11 +137,17 @@ export default function Header() {
           </DropdownMenu>
         </div>
 
-        {/* Mobile Navigation */}
-        <div className="md:hidden">
+        <div className="md:hidden flex items-center">
+          {loading ? null : currentUser ? (
+             <UserAvatarButton />
+          ) : (
+            <Button size="sm" variant="ghost" asChild onClick={() => setMobileMenuOpen(false)}>
+                 <Link href="/login"><LogIn className="mr-2 h-4 w-4" />Login</Link>
+            </Button>
+          )}
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="ml-2">
                 <Menu className="h-6 w-6" />
                 <span className="sr-only">Toggle menu</span>
               </Button>
@@ -141,7 +156,12 @@ export default function Header() {
               <div className="mb-6">
                 <Logo />
               </div>
-              <NavLinks className="flex flex-col space-x-0 space-y-4" itemClassName="text-lg" onLinkClick={() => setMobileMenuOpen(false)} />
+              <NavLinks 
+                className="flex flex-col space-x-0 space-y-4" 
+                itemClassName="text-lg" 
+                onLinkClick={() => setMobileMenuOpen(false)}
+                userRole={userProfile?.role}
+              />
               <div className="mt-auto space-y-2">
                 {loading ? null : currentUser ? (
                   <>
@@ -155,6 +175,7 @@ export default function Header() {
                         <p className="text-xs leading-none text-muted-foreground">
                           {currentUser?.email}
                         </p>
+                         {userProfile?.role && <p className="text-xs leading-none text-muted-foreground capitalize">Role: {userProfile.role}</p>}
                       </div>
                     </div>
                     <Button variant="outline" className="w-full" onClick={() => { handleLogout(); setMobileMenuOpen(false); }}>
@@ -180,7 +201,7 @@ export default function Header() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-[calc(280px-2*theme(spacing.6))]">
                     <DropdownMenuItem>English</DropdownMenuItem>
-                    <DropdownMenuItem>मराठी (Marathi)</DropdownMenuItem>
+                     <DropdownMenuItem>मराठी (Marathi)</DropdownMenuItem>
                     <DropdownMenuItem disabled>Español (Soon)</DropdownMenuItem>
                     <DropdownMenuItem disabled>हिन्दी (Soon)</DropdownMenuItem>
                   </DropdownMenuContent>
