@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -40,7 +41,12 @@ const prompt = ai.definePrompt({
   name: 'diagnoseCropDiseasePrompt',
   input: {schema: DiagnoseCropDiseaseInputSchema},
   output: {schema: DiagnoseCropDiseaseOutputSchema},
-  prompt: `You are an expert in diagnosing crop diseases. Analyze the following information and provide a diagnosis, confidence level, and treatment recommendations.\n\nCrop Description: {{{description}}}\nCrop Photo: {{media url=photoDataUri}}\n\nRespond with the disease, the confidence (0-1) that you are correct, and treatment recommendations to resolve the disease. If the image does not depict a crop, or you cannot determine the disease, respond accordingly.`,
+  prompt: `You are a highly accurate expert agricultural botanist specializing in diagnosing crop diseases with a target accuracy of 90% or higher. Analyze the following information and provide a precise diagnosis, your confidence level (a number between 0 and 1 representing your certainty), and detailed treatment recommendations.
+
+Crop Description: {{{description}}}
+Crop Photo: {{media url=photoDataUri}}
+
+Your response must include the identified disease, your confidence in this diagnosis (e.g., 0.9 for 90% confidence), and actionable treatment steps. If the image does not clearly depict a crop, or if you cannot determine the disease with reasonable confidence, please state that clearly.`,
 });
 
 const diagnoseCropDiseaseFlow = ai.defineFlow(
@@ -54,3 +60,4 @@ const diagnoseCropDiseaseFlow = ai.defineFlow(
     return output!;
   }
 );
+
