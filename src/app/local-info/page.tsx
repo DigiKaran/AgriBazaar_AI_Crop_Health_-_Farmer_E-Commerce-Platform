@@ -3,7 +3,7 @@
 
 import { useState, useEffect, type FormEvent } from 'react';
 import Image from 'next/image';
-import type { Metadata } from 'next';
+// import type { Metadata } from 'next'; // Metadata should be defined in a server component or layout
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,49 +13,62 @@ import type { WeatherData, LocalizedFarmingTip, LocalizedFarmingTipsOutput } fro
 import { getLocalizedFarmingTipsAction } from '@/lib/actions';
 import { cn } from '@/lib/utils';
 
-// export const metadata: Metadata = { // Metadata should be defined in a server component or layout
-//   title: 'Local Farming Information - AgriCheck India',
-//   description: 'Access dynamic, localized weather forecasts and AI-powered farming tips for your region in India.',
-// };
+
+// Mock Indian locations for simulated reverse geocoding
+const mockIndianLocations = [
+  "Nagpur, Maharashtra",
+  "Ludhiana, Punjab",
+  "Guntur, Andhra Pradesh",
+  "Indore, Madhya Pradesh",
+  "Mysuru, Karnataka",
+  "Patna, Bihar",
+  "Jaipur, Rajasthan"
+];
 
 const fetchMockWeather = async (location: string | { lat: number; lon: number }): Promise<WeatherData> => {
   console.log("Fetching mock weather for:", location);
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const isCoords = typeof location === 'object';
-      const locationName = isCoords ? `Vicinity of Lat: ${location.lat.toFixed(2)}, Lon: ${location.lon.toFixed(2)}` : location;
-      
-      // Simulate different weather conditions randomly for better testing
-      const conditions = [
-        { cond: "Sunny and clear", icon: "Sun", hint: "clear sky farm"},
-        { cond: "Partly cloudy", icon: "CloudSun", hint: "cloudy farm" },
-        { cond: "Cloudy with chance of monsoon showers", icon: "CloudRain", hint: "monsoon farm india"},
-        { cond: "Overcast and humid", icon: "Cloud", hint: "overcast field"},
-        { cond: "Light drizzle", icon: "CloudDrizzle", hint: "rainy farm"}
-      ];
-      const randomCond = conditions[Math.floor(Math.random() * conditions.length)];
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 1000)); 
 
-      resolve({
-        condition: randomCond.cond,
-        temperature: `${Math.floor(Math.random() * 15) + 20}°C`, // Temp between 20-34°C
-        humidity: `${Math.floor(Math.random() * 40) + 50}%`,    // Humidity between 50-89%
-        wind: `${Math.floor(Math.random() * 15) + 5} km/h ${['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.floor(Math.random()*8)]}`,
-        iconName: randomCond.icon,
-        locationName: locationName,
-        dataAiHint: randomCond.hint
-      });
-    }, 1000); // Simulate network delay
-  });
+  let locationName: string;
+  if (typeof location === 'object') {
+    // Simulate reverse geocoding: Pick a random Indian location
+    // In a real app, you'd call a reverse geocoding API here with location.lat and location.lon
+    // e.g., const address = await reverseGeocode(location.lat, location.lon); locationName = address.city || address.town;
+    locationName = mockIndianLocations[Math.floor(Math.random() * mockIndianLocations.length)];
+  } else {
+    locationName = location;
+  }
+      
+  // Simulate different weather conditions randomly for better testing
+  const conditions = [
+    { cond: "Sunny and clear", icon: "Sun", hint: "clear sky farm"},
+    { cond: "Partly cloudy", icon: "CloudSun", hint: "cloudy farm" },
+    { cond: "Cloudy with chance of monsoon showers", icon: "CloudRain", hint: "monsoon farm india"},
+    { cond: "Overcast and humid", icon: "Cloud", hint: "overcast field"},
+    { cond: "Light drizzle", icon: "CloudDrizzle", hint: "rainy farm"}
+  ];
+  const randomCond = conditions[Math.floor(Math.random() * conditions.length)];
+
+  return {
+    condition: randomCond.cond,
+    temperature: `${Math.floor(Math.random() * 15) + 20}°C`, // Temp between 20-34°C
+    humidity: `${Math.floor(Math.random() * 40) + 50}%`,    // Humidity between 50-89%
+    wind: `${Math.floor(Math.random() * 15) + 5} km/h ${['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.floor(Math.random()*8)]}`,
+    iconName: randomCond.icon,
+    locationName: locationName, // Use the (potentially reverse geocoded) location name
+    dataAiHint: randomCond.hint
+  };
 };
 
 // Helper to get an icon based on tip category
 const getTipIcon = (category: string): React.ElementType => {
   const catLower = category.toLowerCase();
   if (catLower.includes('pest') || catLower.includes('disease')) return Lightbulb;
-  if (catLower.includes('soil') || catLower.includes('fertiliz')) return Droplets; // Using Droplets as a general 'nurturing' icon
+  if (catLower.includes('soil') || catLower.includes('fertiliz')) return Droplets; 
   if (catLower.includes('irrigat') || catLower.includes('water')) return Droplets;
   if (catLower.includes('sowing') || catLower.includes('plant')) return CalendarDays;
-  if (catLower.includes('harvest')) return Zap; // Using Zap for 'action/result'
+  if (catLower.includes('harvest')) return Zap; 
   if (catLower.includes('weather') || catLower.includes('advisory')) return CloudSun;
   return Lightbulb; // Default
 };
@@ -71,10 +84,9 @@ export default function LocalInfoPage() {
   const [isGpsLoading, setIsGpsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Attempt to load for a default Indian location on initial load (optional)
   useEffect(() => {
-    // You could fetch for a default location like "New Delhi" here if desired
-    // handleFetchDataForLocation("New Delhi"); 
+    // Example: Fetch data for a default location on initial load
+    // handleFetchDataForLocation("Wardha District, Maharashtra"); 
   }, []);
 
   const handleFetchDataForLocation = async (location: string | { lat: number; lon: number }) => {
@@ -85,21 +97,22 @@ export default function LocalInfoPage() {
     setGeneralAdvice(null);
 
     try {
-      // TODO: Replace fetchMockWeather with your actual weather API call
-      // const realWeatherData = await fetchActualWeatherAPI(location);
+      // TODO: Replace fetchMockWeather with your actual weather API call.
+      // If 'location' is an object (lat/lon), you'd first call a reverse geocoding API,
+      // then use the resulting location name for the weather API.
       const fetchedWeather = await fetchMockWeather(location);
       setWeatherData(fetchedWeather);
 
       if (fetchedWeather) {
         const tipsInput = {
-          locationName: fetchedWeather.locationName,
+          locationName: fetchedWeather.locationName, // This will now be the (mock) city/town name
           weatherCondition: fetchedWeather.condition,
           temperatureCelsius: parseFloat(fetchedWeather.temperature.replace('°C', '')) || undefined,
         };
         const tipsResult = await getLocalizedFarmingTipsAction(tipsInput);
         if ('error' in tipsResult) {
           setError(tipsResult.error);
-          setFarmingTips([]); // Clear tips on error
+          setFarmingTips([]); 
         } else if (tipsResult && tipsResult.tips) {
           setFarmingTips(tipsResult.tips.map(tip => ({...tip, iconName: getTipIcon(tip.category).displayName || 'Lightbulb' })));
           setGeneralAdvice(tipsResult.generalAdvice || null);
@@ -132,6 +145,7 @@ export default function LocalInfoPage() {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
+          // Pass coordinates to the fetch function
           handleFetchDataForLocation({ lat: latitude, lon: longitude });
           setIsGpsLoading(false);
         },
@@ -139,7 +153,7 @@ export default function LocalInfoPage() {
           setError(`GPS Error: ${geoError.message}. Please ensure location services are enabled or try entering your location manually.`);
           setIsGpsLoading(false);
         },
-        { timeout: 10000 } // Add a timeout for geolocation
+        { timeout: 10000 } 
       );
     } else {
       setError('Geolocation is not supported by this browser.');
@@ -181,6 +195,9 @@ export default function LocalInfoPage() {
               </Button>
             </div>
           </form>
+           <p className="text-xs text-muted-foreground mt-3">
+            Note: GPS-based location will show a simulated nearby Indian town/city name. Weather data is also simulated.
+          </p>
         </CardContent>
       </Card>
 
@@ -233,13 +250,13 @@ export default function LocalInfoPage() {
                    <p className="text-xs text-muted-foreground mt-1 text-center">Illustrative image. Actual conditions may vary.</p>
               </div>
               <p className="text-xs text-muted-foreground mt-2 text-center">
-                Weather data is currently simulated. Integrate a real weather API for live forecasts.
+                Weather data is currently simulated. Integrate a real weather API for live forecasts and a reverse geocoding service for accurate GPS location names.
               </p>
             </CardContent>
           </Card>
         )}
 
-        {(isLoading && weatherData) && ( // Loading tips after weather is fetched
+        {(isLoading && weatherData) && ( 
            <Card className="shadow-xl rounded-xl flex flex-col justify-center items-center min-h-[300px]">
              <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
              <p className="text-muted-foreground">Fetching AI farming tips...</p>
@@ -313,10 +330,7 @@ export default function LocalInfoPage() {
   );
 }
 
-// A simple way to get Lucide components dynamically, ensure you have 'lucide-react' installed.
-// This is a basic example; for many icons, you might need a more robust mapping.
 const LucideReact = {
   Sun, CloudSun, CloudRain, Cloud, CloudDrizzle, Wind, Thermometer, Lightbulb, Droplets, CalendarDays, Zap, MapPin, Search, LocateFixed, AlertTriangle, Loader2
-  // Add other icons you might use here
 };
 
