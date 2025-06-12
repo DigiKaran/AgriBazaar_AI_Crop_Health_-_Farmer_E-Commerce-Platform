@@ -121,6 +121,7 @@ export default function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem>English</DropdownMenuItem>
+              <DropdownMenuItem>मराठी (Marathi)</DropdownMenuItem>
               <DropdownMenuItem disabled>Español (Soon)</DropdownMenuItem>
               <DropdownMenuItem disabled>हिन्दी (Soon)</DropdownMenuItem>
             </DropdownMenuContent>
@@ -179,6 +180,7 @@ export default function Header() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-[calc(280px-2*theme(spacing.6))]">
                     <DropdownMenuItem>English</DropdownMenuItem>
+                    <DropdownMenuItem>मराठी (Marathi)</DropdownMenuItem>
                     <DropdownMenuItem disabled>Español (Soon)</DropdownMenuItem>
                     <DropdownMenuItem disabled>हिन्दी (Soon)</DropdownMenuItem>
                   </DropdownMenuContent>
