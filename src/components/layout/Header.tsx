@@ -1,6 +1,7 @@
 
 'use client';
 
+import * as React from 'react';
 import Link from 'next/link';
 import { Leaf, Globe, Menu, LogOut, LogIn, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
