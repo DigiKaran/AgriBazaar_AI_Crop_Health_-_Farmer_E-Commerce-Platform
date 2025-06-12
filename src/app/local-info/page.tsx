@@ -1,120 +1,322 @@
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MapPin, CloudRain, Sun, Wind, Droplets, Lightbulb, CalendarDays, Thermometer } from 'lucide-react'; // Added CloudRain, Thermometer
-import type { Metadata } from 'next';
+'use client';
+
+import { useState, useEffect, type FormEvent } from 'react';
 import Image from 'next/image';
+import type { Metadata } from 'next';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { MapPin, Cloud, Sun, Wind, Droplets, Lightbulb, Thermometer, Loader2, AlertTriangle, Search, LocateFixed, CalendarDays, Zap } from 'lucide-react';
+import type { WeatherData, LocalizedFarmingTip, LocalizedFarmingTipsOutput } from '@/types';
+import { getLocalizedFarmingTipsAction } from '@/lib/actions';
+import { cn } from '@/lib/utils';
 
-export const metadata: Metadata = {
-  title: 'Local Farming Information - AgriCheck India',
-  description: 'Access localized weather forecasts and tailored farming tips for your region in India.',
+// export const metadata: Metadata = { // Metadata should be defined in a server component or layout
+//   title: 'Local Farming Information - AgriCheck India',
+//   description: 'Access dynamic, localized weather forecasts and AI-powered farming tips for your region in India.',
+// };
+
+const fetchMockWeather = async (location: string | { lat: number; lon: number }): Promise<WeatherData> => {
+  console.log("Fetching mock weather for:", location);
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const isCoords = typeof location === 'object';
+      const locationName = isCoords ? `Vicinity of Lat: ${location.lat.toFixed(2)}, Lon: ${location.lon.toFixed(2)}` : location;
+      
+      // Simulate different weather conditions randomly for better testing
+      const conditions = [
+        { cond: "Sunny and clear", icon: "Sun", hint: "clear sky farm"},
+        { cond: "Partly cloudy", icon: "CloudSun", hint: "cloudy farm" },
+        { cond: "Cloudy with chance of monsoon showers", icon: "CloudRain", hint: "monsoon farm india"},
+        { cond: "Overcast and humid", icon: "Cloud", hint: "overcast field"},
+        { cond: "Light drizzle", icon: "CloudDrizzle", hint: "rainy farm"}
+      ];
+      const randomCond = conditions[Math.floor(Math.random() * conditions.length)];
+
+      resolve({
+        condition: randomCond.cond,
+        temperature: `${Math.floor(Math.random() * 15) + 20}°C`, // Temp between 20-34°C
+        humidity: `${Math.floor(Math.random() * 40) + 50}%`,    // Humidity between 50-89%
+        wind: `${Math.floor(Math.random() * 15) + 5} km/h ${['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.floor(Math.random()*8)]}`,
+        iconName: randomCond.icon,
+        locationName: locationName,
+        dataAiHint: randomCond.hint
+      });
+    }, 1000); // Simulate network delay
+  });
 };
 
-// Mock data - Tailored for India
-const mockLocation = "Wardha District, Maharashtra, India";
-const mockWeather = {
-  condition: "Cloudy with chance of monsoon showers",
-  temperature: "29°C",
-  humidity: "78%",
-  wind: "15 km/h SW",
-  icon: <CloudRain className="h-12 w-12 text-blue-500" />,
-  dataAiHint: "monsoon farm india"
+// Helper to get an icon based on tip category
+const getTipIcon = (category: string): React.ElementType => {
+  const catLower = category.toLowerCase();
+  if (catLower.includes('pest') || catLower.includes('disease')) return Lightbulb;
+  if (catLower.includes('soil') || catLower.includes('fertiliz')) return Droplets; // Using Droplets as a general 'nurturing' icon
+  if (catLower.includes('irrigat') || catLower.includes('water')) return Droplets;
+  if (catLower.includes('sowing') || catLower.includes('plant')) return CalendarDays;
+  if (catLower.includes('harvest')) return Zap; // Using Zap for 'action/result'
+  if (catLower.includes('weather') || catLower.includes('advisory')) return CloudSun;
+  return Lightbulb; // Default
 };
 
-const farmingTips = [
-  {
-    id: '1',
-    title: 'Monsoon Season Water Management',
-    content: 'During the monsoon, ensure proper drainage in fields to prevent waterlogging for crops like cotton and soybean. For rice paddies, maintain adequate water levels. Harvest rainwater where possible.',
-    icon: <Droplets className="h-6 w-6 text-blue-500" />,
-    category: "Water Management (Monsoon)"
-  },
-  {
-    id: '2',
-    title: 'Pest & Disease Watch: Kharif Crops',
-    content: 'Increased humidity during monsoon can lead to fungal diseases and pest attacks on Kharif crops. Regularly inspect for signs of stem borer in rice or aphids in cotton. Use neem-based pesticides as a preventive.',
-    icon: <Lightbulb className="h-6 w-6 text-yellow-600" />, // Using Lightbulb for 'insight'
-    category: "Pest Control (Kharif)"
-  },
-  {
-    id: '3',
-    title: 'Kharif Season Planting & Care',
-    content: 'In Maharashtra, for the Kharif season (June-October), this is a good time for sowing cotton, soybean, tur (pigeon pea), and rice. Ensure use of certified seeds and balanced fertilization.',
-    icon: <CalendarDays className="h-6 w-6 text-green-600" />,
-    category: "Planting (Kharif)"
-  },
-];
 
 export default function LocalInfoPage() {
+  const [locationInput, setLocationInput] = useState('');
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [farmingTips, setFarmingTips] = useState<LocalizedFarmingTip[] | null>(null);
+  const [generalAdvice, setGeneralAdvice] = useState<string | null>(null);
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGpsLoading, setIsGpsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Attempt to load for a default Indian location on initial load (optional)
+  useEffect(() => {
+    // You could fetch for a default location like "New Delhi" here if desired
+    // handleFetchDataForLocation("New Delhi"); 
+  }, []);
+
+  const handleFetchDataForLocation = async (location: string | { lat: number; lon: number }) => {
+    setIsLoading(true);
+    setError(null);
+    setWeatherData(null);
+    setFarmingTips(null);
+    setGeneralAdvice(null);
+
+    try {
+      // TODO: Replace fetchMockWeather with your actual weather API call
+      // const realWeatherData = await fetchActualWeatherAPI(location);
+      const fetchedWeather = await fetchMockWeather(location);
+      setWeatherData(fetchedWeather);
+
+      if (fetchedWeather) {
+        const tipsInput = {
+          locationName: fetchedWeather.locationName,
+          weatherCondition: fetchedWeather.condition,
+          temperatureCelsius: parseFloat(fetchedWeather.temperature.replace('°C', '')) || undefined,
+        };
+        const tipsResult = await getLocalizedFarmingTipsAction(tipsInput);
+        if ('error' in tipsResult) {
+          setError(tipsResult.error);
+          setFarmingTips([]); // Clear tips on error
+        } else if (tipsResult && tipsResult.tips) {
+          setFarmingTips(tipsResult.tips.map(tip => ({...tip, iconName: getTipIcon(tip.category).displayName || 'Lightbulb' })));
+          setGeneralAdvice(tipsResult.generalAdvice || null);
+        } else {
+           setError("Received no tips from the AI service.");
+           setFarmingTips([]);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError('Failed to fetch local information. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleSearchSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!locationInput.trim()) {
+      setError("Please enter a location.");
+      return;
+    }
+    handleFetchDataForLocation(locationInput);
+  };
+
+  const handleDetectLocation = () => {
+    if (navigator.geolocation) {
+      setIsGpsLoading(true);
+      setError(null);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          handleFetchDataForLocation({ lat: latitude, lon: longitude });
+          setIsGpsLoading(false);
+        },
+        (geoError) => {
+          setError(`GPS Error: ${geoError.message}. Please ensure location services are enabled or try entering your location manually.`);
+          setIsGpsLoading(false);
+        },
+        { timeout: 10000 } // Add a timeout for geolocation
+      );
+    } else {
+      setError('Geolocation is not supported by this browser.');
+    }
+  };
+  
+  const WeatherIcon = weatherData?.iconName ? (LucideReact[weatherData.iconName as keyof typeof LucideReact] || Cloud) : Cloud;
+
+
   return (
     <div className="container mx-auto py-8 px-4">
-      <header className="mb-12 text-center">
+      <header className="mb-8 text-center">
         <h1 className="text-4xl sm:text-5xl font-headline tracking-tight">Local Farming Information</h1>
-        <div className="flex items-center justify-center mt-4 text-lg text-muted-foreground">
-          <MapPin className="h-5 w-5 mr-2 text-primary" />
-          <span>{mockLocation} (Sample Data for India)</span>
-        </div>
+        <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
+          Enter your location or use GPS to get tailored weather forecasts and AI-powered farming tips for your area in India.
+        </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 items-stretch">
-        <Card className="shadow-xl rounded-xl flex flex-col">
-          <CardHeader>
-            <CardTitle className="text-2xl flex items-center gap-2">
-              <Thermometer className="text-primary"/> Current Weather
-            </CardTitle>
-            <CardDescription>Today's forecast for {mockLocation}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-grow space-y-4">
-            <div className="flex items-center justify-around p-4 bg-secondary/30 rounded-lg">
-              <div>{mockWeather.icon}</div>
-              <div className="text-center">
-                <p className="text-3xl font-semibold">{mockWeather.temperature}</p>
-                <p className="text-muted-foreground">{mockWeather.condition}</p>
-              </div>
+      <Card className="mb-8 shadow-lg rounded-xl">
+        <CardHeader>
+          <CardTitle className="text-xl">Find Your Location</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-4 items-start">
+            <Input
+              type="text"
+              placeholder="Enter your city or district (e.g., Nagpur, Punjab)"
+              value={locationInput}
+              onChange={(e) => setLocationInput(e.target.value)}
+              className="flex-grow text-base"
+              aria-label="Enter location"
+            />
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button type="submit" disabled={isLoading || isGpsLoading} className="w-1/2 sm:w-auto">
+                {isLoading && !isGpsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Search
+              </Button>
+              <Button variant="outline" onClick={handleDetectLocation} disabled={isLoading || isGpsLoading} className="w-1/2 sm:w-auto">
+                {isGpsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LocateFixed className="mr-2 h-4 w-4" />} Use GPS
+              </Button>
             </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <p><strong className="font-medium">Humidity:</strong> {mockWeather.humidity}</p>
-              <p><strong className="font-medium">Wind:</strong> {mockWeather.wind}</p>
-            </div>
-            <div className="mt-auto pt-4">
-                <Image src="https://placehold.co/600x300.png" alt="Weather relevant image for Indian farm" width={600} height={300} className="rounded-lg aspect-[2/1] object-cover" data-ai-hint={mockWeather.dataAiHint}/>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="shadow-xl rounded-xl flex flex-col">
-          <CardHeader>
-            <CardTitle className="text-2xl flex items-center gap-2">
-                <Lightbulb className="text-primary"/> Today's Top Tip
-            </CardTitle>
-            <CardDescription>A key recommendation for today in your area.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-grow flex flex-col justify-center items-center text-center p-6 bg-accent/10 rounded-b-xl">
-             {farmingTips[0].icon}
-            <h3 className="font-headline text-xl mt-3 mb-2">{farmingTips[0].title}</h3>
-            <p className="text-muted-foreground text-sm">{farmingTips[0].content}</p>
-          </CardContent>
-        </Card>
-      </div>
+          </form>
+        </CardContent>
+      </Card>
 
-      <div>
-        <h2 className="text-3xl font-headline mb-6 text-center md:text-left">Seasonal Farming Tips for India</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {farmingTips.map((tip) => (
-            <Card key={tip.id} className="shadow-lg hover:shadow-xl transition-shadow rounded-xl overflow-hidden">
-              <CardHeader className="bg-secondary/20">
-                <div className="flex items-center gap-3">
-                  {tip.icon}
-                  <CardTitle className="font-headline text-lg">{tip.title}</CardTitle>
-                </div>
-                <CardDescription className="text-xs pt-1">{tip.category}</CardDescription>
-              </CardHeader>
-              <CardContent className="p-6">
-                <p className="text-sm text-muted-foreground">{tip.content}</p>
-              </CardContent>
-            </Card>
-          ))}
+      {error && (
+        <Alert variant="destructive" className="mb-8">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {isLoading && !weatherData && (
+        <div className="text-center py-10">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Fetching local data...</p>
         </div>
+      )}
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 items-start">
+        {weatherData && (
+          <Card className="shadow-xl rounded-xl flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-2xl flex items-center gap-2">
+                <Thermometer className="text-primary"/> Current Weather
+              </CardTitle>
+              <CardDescription>Forecast for {weatherData.locationName}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow space-y-4">
+              <div className="flex items-center justify-around p-4 bg-secondary/30 rounded-lg">
+                <WeatherIcon className="h-16 w-16 text-primary" />
+                <div className="text-center">
+                  <p className="text-4xl font-semibold">{weatherData.temperature}</p>
+                  <p className="text-muted-foreground capitalize">{weatherData.condition}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <p><strong className="font-medium">Humidity:</strong> {weatherData.humidity}</p>
+                <p><strong className="font-medium">Wind:</strong> {weatherData.wind}</p>
+              </div>
+              <div className="mt-auto pt-4">
+                  <Image 
+                    src={`https://placehold.co/600x300.png`} 
+                    alt={`Weather image for ${weatherData.locationName}`} 
+                    width={600} 
+                    height={300} 
+                    className="rounded-lg aspect-[2/1] object-cover" 
+                    data-ai-hint={weatherData.dataAiHint || "farm landscape india"}
+                    priority={false}
+                  />
+                   <p className="text-xs text-muted-foreground mt-1 text-center">Illustrative image. Actual conditions may vary.</p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                Weather data is currently simulated. Integrate a real weather API for live forecasts.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {(isLoading && weatherData) && ( // Loading tips after weather is fetched
+           <Card className="shadow-xl rounded-xl flex flex-col justify-center items-center min-h-[300px]">
+             <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
+             <p className="text-muted-foreground">Fetching AI farming tips...</p>
+           </Card>
+        )}
+
+
+        {farmingTips && farmingTips.length > 0 && !isLoading && (
+          <Card className="shadow-xl rounded-xl flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-2xl flex items-center gap-2">
+                  <Lightbulb className="text-primary"/> AI Farming Tips
+              </CardTitle>
+              <CardDescription>Tailored advice for {weatherData?.locationName || 'your area'}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {generalAdvice && (
+                <Alert className="bg-accent/10 border-accent/30 mb-4">
+                  <AlertTriangle className="h-4 w-4 text-accent" />
+                  <AlertTitle className="text-accent">General Advice</AlertTitle>
+                  <AlertDescription>{generalAdvice}</AlertDescription>
+                </Alert>
+              )}
+              {farmingTips.map((tip, index) => {
+                const TipIcon = tip.iconName ? (LucideReact[tip.iconName as keyof typeof LucideReact] || Lightbulb) : Lightbulb;
+                return (
+                  <div key={index} className="p-3 border rounded-lg bg-background/50 hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-3 mb-1">
+                       <TipIcon className="h-5 w-5 text-primary" />
+                       <h3 className="font-headline text-lg">{tip.title}</h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-2 ml-8">{tip.category}</p>
+                    <p className="text-sm text-muted-foreground ml-8">{tip.content}</p>
+                  </div>
+                );
+              })}
+            </CardContent>
+             {weatherData && (
+                <CardFooter>
+                    <p className="text-xs text-muted-foreground">Tips generated by AI based on current (mock) weather and location.</p>
+                </CardFooter>
+            )}
+          </Card>
+        )}
+        
+        {!isLoading && weatherData && farmingTips === null && !error && (
+             <Card className="shadow-xl rounded-xl flex flex-col justify-center items-center min-h-[300px]">
+                <Search className="h-10 w-10 text-muted-foreground mb-3"/>
+                <p className="text-muted-foreground">Could not retrieve farming tips at this time.</p>
+             </Card>
+        )}
+
+        {!isLoading && weatherData && farmingTips && farmingTips.length === 0 && !error && (
+             <Card className="shadow-xl rounded-xl flex flex-col justify-center items-center min-h-[300px]">
+                <Search className="h-10 w-10 text-muted-foreground mb-3"/>
+                <p className="text-muted-foreground">No specific farming tips available for this location/weather combination.</p>
+             </Card>
+        )}
+
+
       </div>
+      {!weatherData && !isLoading && !error && (
+        <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-xl bg-card">
+            <MapPin className="h-16 w-16 text-muted-foreground mx-auto mb-4"/>
+            <p className="text-xl font-semibold text-muted-foreground">Enter a location to get started.</p>
+            <p className="text-sm text-muted-foreground mt-1">We'll fetch weather and AI-powered farming tips for you.</p>
+        </div>
+      )}
+
     </div>
   );
 }
+
+// A simple way to get Lucide components dynamically, ensure you have 'lucide-react' installed.
+// This is a basic example; for many icons, you might need a more robust mapping.
+const LucideReact = {
+  Sun, CloudSun, CloudRain, Cloud, CloudDrizzle, Wind, Thermometer, Lightbulb, Droplets, CalendarDays, Zap, MapPin, Search, LocateFixed, AlertTriangle, Loader2
+  // Add other icons you might use here
+};
+

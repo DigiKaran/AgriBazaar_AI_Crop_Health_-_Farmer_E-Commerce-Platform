@@ -24,7 +24,29 @@ export interface UserProfile {
   uid: string;
   email: string | null;
   displayName?: string | null;
-  photoURL?: string | null; // Added for avatar
-  createdAt: any; // Firestore Timestamp or Date
+  photoURL?: string | null;
+  createdAt: any; 
   // Add other fields as needed
+}
+
+export interface WeatherData {
+  condition: string;
+  temperature: string;
+  humidity: string;
+  wind: string;
+  iconName: string; // Lucide icon name
+  locationName: string;
+  dataAiHint?: string;
+}
+
+export interface LocalizedFarmingTip {
+  title: string;
+  content: string;
+  category: string;
+  iconName?: string; // Optional: Lucide icon name based on category
+}
+
+export interface LocalizedFarmingTipsOutput {
+  tips: LocalizedFarmingTip[];
+  generalAdvice?: string;
 }
