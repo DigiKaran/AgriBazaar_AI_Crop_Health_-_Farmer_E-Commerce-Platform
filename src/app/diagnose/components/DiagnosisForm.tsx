@@ -11,10 +11,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, UploadCloud, AlertTriangle, CheckCircle2, Brain, ShieldCheck } from 'lucide-react';
+import { Loader2, UploadCloud, AlertTriangle, CheckCircle2, Brain, ShieldCheck, Save } from 'lucide-react';
 import type { DiagnosisResult, PreventativeMeasuresResult } from '@/types';
 import { diagnoseCropAction, generatePreventativeMeasuresAction } from '@/lib/actions';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 const diagnosisFormSchema = z.object({
   image: z.custom<FileList>((val) => val instanceof FileList && val.length > 0, 'Please upload an image of the crop.'),
@@ -42,14 +44,16 @@ export default function DiagnosisForm() {
   const [isLoadingPreventative, setIsLoadingPreventative] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const { currentUser } = useAuth();
+  const { toast } = useToast();
 
   const form = useForm<DiagnosisFormValues>({
     resolver: zodResolver(diagnosisFormSchema),
     defaultValues: {
       description: "",
-      cropType: "Unknown Crop", // Default value, can be updated
-      season: "Current Season", // Default value, can be updated
-      location: "Local Area" // Default value, can be updated
+      cropType: "Unknown Crop", 
+      season: "Current Season", 
+      location: "Local Area" 
     },
   });
 
@@ -79,17 +83,41 @@ export default function DiagnosisForm() {
       return;
     }
 
+    if (!currentUser) {
+      setError('You must be logged in to diagnose a crop.');
+      setIsLoadingDiagnosis(false);
+      toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "Please log in to use the diagnosis feature.",
+      });
+      return;
+    }
+
     try {
       const photoDataUri = await fileToDataUri(data.image[0]);
-      const result = await diagnoseCropAction({ photoDataUri, description: data.description });
+      const result = await diagnoseCropAction({ photoDataUri, description: data.description }, currentUser.uid);
 
-      if ('error' in result) {
+      if (result.error) {
         setError(result.error);
+        if (result.diagnosis) { // Partial success: AI worked, DB failed
+            setDiagnosis(result.diagnosis);
+             toast({
+                variant: "destructive",
+                title: "Diagnosis Complete (Save Failed)",
+                description: "Crop diagnosed, but failed to save to your history.",
+            });
+        }
       } else if (result.diagnosis) {
         setDiagnosis(result.diagnosis);
+        toast({
+            title: "Diagnosis Successful",
+            description: `Identified: ${result.diagnosis.disease}. History saved.`,
+            action: result.historyId ? <CheckCircle2 className="text-green-500" /> : undefined,
+        });
         // Update cropType if possible from diagnosis or keep user input
         if (result.diagnosis.disease && !result.diagnosis.disease.toLowerCase().includes("unknown")) {
-             form.setValue('cropType', result.diagnosis.disease.split(' ')[0] || data.cropType || "General Crop"); // Example logic
+             form.setValue('cropType', result.diagnosis.disease.split(' ')[0] || data.cropType || "General Crop");
         }
       } else {
         setError('Unexpected response from diagnosis service.');
@@ -104,7 +132,7 @@ export default function DiagnosisForm() {
 
   const handleGetPreventativeMeasures = async () => {
     setIsLoadingPreventative(true);
-    setError(null); // Clear previous errors
+    setError(null); 
     setPreventativeMeasures(null);
 
     const cropType = form.getValues('cropType') || "General Crop";
@@ -115,12 +143,26 @@ export default function DiagnosisForm() {
       const result = await generatePreventativeMeasuresAction({ cropType, season, location });
       if ('error' in result) {
         setError(result.error);
+         toast({
+            variant: "destructive",
+            title: "Failed",
+            description: result.error,
+        });
       } else {
         setPreventativeMeasures({ measures: result.preventativeMeasures });
+        toast({
+            title: "Preventative Measures Generated",
+            description: "Tips are ready for you.",
+        });
       }
     } catch (err) {
       setError('Failed to fetch preventative measures.');
       console.error(err);
+       toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not fetch preventative measures.",
+        });
     } finally {
       setIsLoadingPreventative(false);
     }
@@ -132,9 +174,8 @@ export default function DiagnosisForm() {
         <Card className="shadow-xl rounded-xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-2xl"><UploadCloud className="text-primary" /> Upload Crop Image</CardTitle>
-            <CardDescription>Provide an image and description of the affected crop.</CardDescription>
+            <CardDescription>Provide an image and description of the affected crop. Login required.</CardDescription>
           </CardHeader>
-          {/* The <form> tag is for the native HTML form submission behavior */}
           <form onSubmit={form.handleSubmit(onSubmitDiagnosis)} className="space-y-6">
             <CardContent className="space-y-6">
               <FormField
@@ -149,6 +190,7 @@ export default function DiagnosisForm() {
                         accept="image/*"
                         onChange={handleImageChange}
                         className="file:text-sm file:font-medium file:bg-primary/10 file:text-primary file:border-0 file:rounded-md file:px-3 file:py-1.5 hover:file:bg-primary/20"
+                        disabled={!currentUser || isLoadingDiagnosis}
                       />
                     </FormControl>
                     <FormMessage />
@@ -167,7 +209,7 @@ export default function DiagnosisForm() {
                   <FormItem>
                     <FormLabel>Description of Symptoms</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="e.g., Yellow spots on leaves, wilting, etc." {...field} rows={4} />
+                      <Textarea placeholder="e.g., Yellow spots on leaves, wilting, etc." {...field} rows={4} disabled={!currentUser || isLoadingDiagnosis} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -175,7 +217,7 @@ export default function DiagnosisForm() {
               />
             </CardContent>
             <CardFooter>
-              <Button type="submit" disabled={isLoadingDiagnosis} className="w-full">
+              <Button type="submit" disabled={!currentUser || isLoadingDiagnosis} className="w-full">
                 {isLoadingDiagnosis ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Brain className="mr-2 h-4 w-4" />}
                 Diagnose Crop
               </Button>
@@ -214,7 +256,7 @@ export default function DiagnosisForm() {
                           render={({ field }) => (
                             <FormItem className="mb-2">
                               <FormLabel>Crop Type (for prevention tips)</FormLabel>
-                              <FormControl><Input {...field} /></FormControl>
+                              <FormControl><Input {...field} disabled={isLoadingPreventative} /></FormControl>
                             </FormItem>
                           )}
                         />
@@ -224,7 +266,7 @@ export default function DiagnosisForm() {
                           render={({ field }) => (
                             <FormItem className="mb-2">
                               <FormLabel>Current Season</FormLabel>
-                              <FormControl><Input {...field} /></FormControl>
+                              <FormControl><Input {...field} disabled={isLoadingPreventative} /></FormControl>
                             </FormItem>
                           )}
                         />
@@ -234,7 +276,7 @@ export default function DiagnosisForm() {
                           render={({ field }) => (
                             <FormItem className="mb-4">
                               <FormLabel>Location</FormLabel>
-                              <FormControl><Input {...field} /></FormControl>
+                              <FormControl><Input {...field} disabled={isLoadingPreventative} /></FormControl>
                             </FormItem>
                           )}
                         />

@@ -50,3 +50,21 @@ export interface LocalizedFarmingTipsOutput {
   tips: LocalizedFarmingTip[];
   generalAdvice?: string;
 }
+
+export interface DiagnosisHistoryEntry {
+  id?: string; // Firestore document ID
+  userId: string;
+  photoDataUri?: string; // Or a URL if storing in Cloud Storage
+  description: string;
+  diagnosis: DiagnosisResult;
+  timestamp: any; // Firestore serverTimestamp
+}
+
+export interface ChatMessage {
+  id?: string; // Firestore document ID
+  userId: string;
+  sessionId: string;
+  sender: 'user' | 'bot';
+  text: string;
+  timestamp: any; // Firestore serverTimestamp
+}
