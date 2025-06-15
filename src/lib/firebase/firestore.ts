@@ -1,7 +1,7 @@
 
-import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, doc, updateDoc, getDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "./index";
-import type { DiagnosisHistoryEntry, ChatMessage } from '@/types';
+import type { DiagnosisHistoryEntry, ChatMessage, UserProfile, UserRole } from '@/types';
 
 // Diagnosis History
 const DIAGNOSIS_HISTORY_COLLECTION = 'diagnosis_history';
@@ -74,5 +74,33 @@ export const getChatMessages = async (userId: string, sessionId: string): Promis
   } catch (error) {
     console.error("Error fetching chat messages: ", error);
     throw new Error("Failed to fetch chat messages.");
+  }
+};
+
+// User Management
+const USERS_COLLECTION = 'users';
+
+export const getAllUsers = async (): Promise<UserProfile[]> => {
+  try {
+    const usersQuery = query(collection(db, USERS_COLLECTION), orderBy("createdAt", "desc"));
+    const querySnapshot = await getDocs(usersQuery);
+    const users: UserProfile[] = [];
+    querySnapshot.forEach((doc) => {
+      users.push({ uid: doc.id, ...doc.data() } as UserProfile);
+    });
+    return users;
+  } catch (error) {
+    console.error("Error fetching all users: ", error);
+    throw new Error("Failed to fetch users.");
+  }
+};
+
+export const updateUserRole = async (userId: string, newRole: UserRole): Promise<void> => {
+  try {
+    const userRef = doc(db, USERS_COLLECTION, userId);
+    await updateDoc(userRef, { role: newRole });
+  } catch (error) {
+    console.error("Error updating user role: ", error);
+    throw new Error("Failed to update user role.");
   }
 };

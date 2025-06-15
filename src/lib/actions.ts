@@ -4,12 +4,17 @@
 import { diagnoseCropDisease, DiagnoseCropDiseaseInput, DiagnoseCropDiseaseOutput } from '@/ai/flows/diagnose-crop-disease';
 import { generatePreventativeMeasures, GeneratePreventativeMeasuresInput, GeneratePreventativeMeasuresOutput } from '@/ai/flows/generate-preventative-measures';
 import { getLocalizedFarmingTips, GetLocalizedFarmingTipsInput, GetLocalizedFarmingTipsOutput } from '@/ai/flows/get-localized-farming-tips';
-import type { LocalizedFarmingTip, DiagnosisResult, ChatMessage, DiagnosisHistoryEntry } from '@/types';
+import type { LocalizedFarmingTip, DiagnosisResult, ChatMessage, DiagnosisHistoryEntry, UserProfile, UserRole } from '@/types';
 import { 
     saveDiagnosisHistory as saveDiagnosisToDb, 
     saveChatMessage as saveMessageToDb,
-    updateDiagnosisHistoryEntry
+    updateDiagnosisHistoryEntry,
+    getAllUsers as getAllUsersFromDb,
+    updateUserRole as updateUserRoleInDb,
+    // getUserProfile // Not directly used here but good to be aware of for admin checks
 } from './firebase/firestore';
+// For more robust admin checks, you'd ideally use Firebase Admin SDK or verify a custom claim.
+// For now, actions are implicitly protected by the page access control.
 
 interface DiagnoseCropActionResult {
   diagnosis?: DiagnosisResult;
@@ -112,5 +117,33 @@ export async function requestExpertReviewAction(
   } catch (error) {
     console.error("Error requesting expert review:", error);
     return { error: "Failed to request expert review. Please try again.", success: false };
+  }
+}
+
+// Admin Actions
+export async function fetchAllUsersAction(adminUserId: string): Promise<{ users?: UserProfile[]; error?: string }> {
+  // Ideally, verify adminUserId belongs to an admin here using Firebase Admin SDK or custom claims.
+  // For now, relying on client-side route protection.
+  try {
+    const users = await getAllUsersFromDb();
+    return { users };
+  } catch (error) {
+    console.error('Error fetching all users action:', error);
+    return { error: 'Failed to fetch users.' };
+  }
+}
+
+export async function updateUserRoleAction(
+  targetUserId: string, 
+  newRole: UserRole, 
+  adminUserId: string
+): Promise<{ success?: boolean; error?: string }> {
+  // Ideally, verify adminUserId belongs to an admin here.
+  try {
+    await updateUserRoleInDb(targetUserId, newRole);
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating user role action:', error);
+    return { error: 'Failed to update user role.' };
   }
 }

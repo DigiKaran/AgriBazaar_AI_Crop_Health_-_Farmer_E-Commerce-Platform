@@ -7,15 +7,16 @@ import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ShieldAlert, LayoutDashboard } from 'lucide-react';
+import { ShieldAlert, LayoutDashboard, Users } from 'lucide-react';
+import UserManagementTable from './components/UserManagementTable';
 
 export default function AdminPage() {
-  const { userProfile, loading } = useAuth();
+  const { userProfile, loading, currentUser } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading && userProfile?.role !== 'admin') {
-      // router.push('/'); // Redirect if not admin
+       router.push('/'); // Redirect if not admin and not loading
     }
   }, [userProfile, loading, router]);
 
@@ -50,23 +51,32 @@ export default function AdminPage() {
         <h1 className="text-4xl font-headline flex items-center gap-3">
             <LayoutDashboard className="h-10 w-10 text-primary"/> Admin Dashboard
         </h1>
-        <p className="text-muted-foreground mt-2">Manage users, experts, and platform settings.</p>
+        <p className="text-muted-foreground mt-2">Manage users, roles, and platform settings.</p>
       </header>
       
-      <Card className="shadow-lg rounded-xl">
+      <Card className="shadow-lg rounded-xl mb-8">
         <CardHeader>
-          <CardTitle>Welcome, Admin!</CardTitle>
+          <CardTitle className="flex items-center gap-2"><Users className="h-6 w-6 text-primary"/>User Management</CardTitle>
+          <CardDescription>View users and manage their roles (e.g., promote to expert).</CardDescription>
         </CardHeader>
         <CardContent>
-          <p>This is the AgriCheck admin panel. From here, you can manage various aspects of the platform.</p>
-          <p className="mt-4 text-sm text-muted-foreground">
-            (Full functionality for user and expert management, and query handling would be built out here.)
+          {currentUser && <UserManagementTable adminUserId={currentUser.uid} />}
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-lg rounded-xl">
+        <CardHeader>
+          <CardTitle>Other Admin Functions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            (Additional admin functionalities like expert query review queue, content management, or platform analytics would be built out here.)
           </p>
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button variant="outline" disabled>Manage Users (Coming Soon)</Button>
-            <Button variant="outline" disabled>Manage Experts (Coming Soon)</Button>
-            <Button variant="outline" disabled>View Expert Queries (Coming Soon)</Button>
+            <Button variant="outline" disabled>Manage Expert Queries (Coming Soon)</Button>
             <Button variant="outline" disabled>Platform Settings (Coming Soon)</Button>
+            <Button variant="outline" disabled>Content Management (Coming Soon)</Button>
+            <Button variant="outline" disabled>View Analytics (Coming Soon)</Button>
           </div>
         </CardContent>
       </Card>

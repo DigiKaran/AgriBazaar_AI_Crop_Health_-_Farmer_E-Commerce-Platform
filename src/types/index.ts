@@ -1,4 +1,5 @@
 
+
 export interface Product {
   id: string;
   name: string;
@@ -27,7 +28,7 @@ export interface UserProfile {
   email: string | null;
   displayName?: string | null;
   photoURL?: string | null;
-  createdAt: any; 
+  createdAt: any; // Firestore Timestamp or { seconds: number, nanoseconds: number }
   role: UserRole;
 }
 
