@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ShieldAlert, LayoutDashboard, Users } from 'lucide-react';
+import { ShieldAlert, LayoutDashboard, Users, MessageSquareCheck, Settings, BarChart3, FileText } from 'lucide-react';
 import UserManagementTable from './components/UserManagementTable';
 
 export default function AdminPage() {
@@ -66,20 +66,29 @@ export default function AdminPage() {
 
       <Card className="shadow-lg rounded-xl">
         <CardHeader>
-          <CardTitle>Other Admin Functions</CardTitle>
+          <CardTitle className="text-xl">Other Admin Functions</CardTitle>
+          <CardDescription>Access additional administrative tools and platform settings.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            (Additional admin functionalities like expert query review queue, content management, or platform analytics would be built out here.)
-          </p>
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button variant="outline" disabled>Manage Expert Queries (Coming Soon)</Button>
-            <Button variant="outline" disabled>Platform Settings (Coming Soon)</Button>
-            <Button variant="outline" disabled>Content Management (Coming Soon)</Button>
-            <Button variant="outline" disabled>View Analytics (Coming Soon)</Button>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Button variant="outline" asChild>
+              <Link href="/admin/expert-queries">
+                <MessageSquareCheck className="mr-2 h-5 w-5"/> Manage Expert Queries
+              </Link>
+            </Button>
+            <Button variant="outline" disabled>
+              <Settings className="mr-2 h-5 w-5"/> Platform Settings (Coming Soon)
+            </Button>
+            <Button variant="outline" disabled>
+              <FileText className="mr-2 h-5 w-5"/> Content Management (Coming Soon)
+            </Button>
+            <Button variant="outline" disabled>
+              <BarChart3 className="mr-2 h-5 w-5"/> View Analytics (Coming Soon)
+            </Button>
           </div>
         </CardContent>
       </Card>
     </div>
   );
 }
+

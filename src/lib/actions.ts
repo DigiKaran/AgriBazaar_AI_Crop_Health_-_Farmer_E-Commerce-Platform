@@ -11,6 +11,7 @@ import {
     updateDiagnosisHistoryEntry,
     getAllUsers as getAllUsersFromDb,
     updateUserRole as updateUserRoleInDb,
+    getPendingExpertQueries as getPendingExpertQueriesFromDb,
 } from './firebase/firestore';
 
 interface DiagnoseCropActionResult {
@@ -28,27 +29,26 @@ export async function diagnoseCropAction(
     
     if (userId && aiResult.diagnosis) {
       try {
-        const historyEntry: Omit<DiagnosisHistoryEntry, 'id' | 'timestamp' | 'status'> = {
+        const historyEntryBase: Omit<DiagnosisHistoryEntry, 'id' | 'timestamp' | 'status' | 'expertReviewRequested' | 'expertDiagnosis' | 'expertComments' | 'expertReviewedBy' | 'expertReviewedAt'> = {
           userId,
           photoDataUri: input.photoDataUri,
           description: input.description,
           diagnosis: aiResult.diagnosis,
-          expertReviewRequested: false,
         };
-        const historyId = await saveDiagnosisToDb(historyEntry);
+        const historyId = await saveDiagnosisToDb(historyEntryBase);
         return { diagnosis: aiResult.diagnosis, historyId };
-      } catch (dbError) {
+      } catch (dbError: any) {
         console.error('Error saving diagnosis to DB:', dbError);
-        return { diagnosis: aiResult.diagnosis, error: "Diagnosis successful, but failed to save history." };
+        return { diagnosis: aiResult.diagnosis, error: `Diagnosis successful, but failed to save history. ${dbError.message || ''}`.trim() };
       }
     }
      if (aiResult.diagnosis) {
         return { diagnosis: aiResult.diagnosis };
     }
     return { error: aiResult.diagnosis?.toString() ?? 'Unknown error from AI diagnosis' };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in diagnoseCropAction:', error);
-    return { error: 'Failed to diagnose crop. Please try again.' };
+    return { error: `Failed to diagnose crop. ${error.message || ''}`.trim() };
   }
 }
 
@@ -58,9 +58,9 @@ export async function generatePreventativeMeasuresAction(
   try {
     const result = await generatePreventativeMeasures(input);
     return result;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in generatePreventativeMeasuresAction:', error);
-    return { error: 'Failed to generate preventative measures. Please try again.' };
+    return { error: `Failed to generate preventative measures. ${error.message || ''}`.trim() };
   }
 }
 
@@ -70,7 +70,7 @@ export async function getLocalizedFarmingTipsAction(
   try {
     const result = await getLocalizedFarmingTips(input);
     return result;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in getLocalizedFarmingTipsAction:', error);
     const errorMessage = (typeof error === 'object' && error !== null && 'message' in error) ? (error as {message: string}).message : 'An unknown error occurred';
     return { error: `Failed to generate farming tips: ${errorMessage}. Please try again.` };
@@ -86,9 +86,9 @@ export async function saveChatMessageAction(
   try {
     const messageId = await saveMessageToDb(message);
     return { messageId };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in saveChatMessageAction:', error);
-    return { error: 'Failed to save chat message. Please try again.' };
+    return { error: `Failed to save chat message. ${error.message || ''}`.trim() };
   }
 }
 
@@ -109,9 +109,9 @@ export async function requestExpertReviewAction(
       status: 'pending_expert'
     });
     return { success: true, message: "Expert review requested successfully." };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error requesting expert review:", error);
-    return { error: "Failed to request expert review. Please try again.", success: false };
+    return { error: `Failed to request expert review. ${error.message || ''}`.trim(), success: false };
   }
 }
 
@@ -121,22 +121,13 @@ export async function fetchAllUsersAction(adminUserId: string): Promise<{ users?
     console.error("fetchAllUsersAction: adminUserId is missing.");
     return { error: 'Admin user ID is missing. Cannot fetch users.' };
   }
-  // Note: True server-side role verification for adminUserId would ideally use Firebase Admin SDK.
-  // This action relies on the page-level access control in AdminPage.tsx.
   try {
     const users = await getAllUsersFromDb();
     return { users };
-  } catch (error: any) { // Catch as 'any' to access error properties
+  } catch (error: any) {
     console.error('Error in fetchAllUsersAction:', error);
-    let detailedError = 'Failed to fetch users.';
-    if (error.message) {
-      detailedError = error.message; // Use the more detailed error message from firestore.ts
-    }
-    // Check for common Firebase error codes if still needed, though message should be more specific now
-    if (error.code === 'permission-denied' || (error.message && error.message.toLowerCase().includes('permission denied'))) {
-        detailedError = 'Permission denied when fetching users. Please verify Firestore rules and that your account has the "admin" role.';
-    }
-    return { error: detailedError };
+    const specificError = error.message || 'An unknown error occurred.';
+    return { error: `Failed to fetch users. ${specificError}`.trim() };
   }
 }
 
@@ -149,17 +140,28 @@ export async function updateUserRoleAction(
     console.error("updateUserRoleAction: adminUserId is missing.");
     return { error: 'Admin user ID is missing. Cannot update role.' };
   }
-   // Note: True server-side role verification for adminUserId would ideally use Firebase Admin SDK.
   try {
     await updateUserRoleInDb(targetUserId, newRole);
     return { success: true };
   } catch (error: any) {
     console.error('Error updating user role action:', error);
-     if (error.code === 'permission-denied' || (error.message && error.message.toLowerCase().includes('permission denied'))) {
-        return { error: 'Permission denied when updating user role. Please verify Firestore rules and that your account has the "admin" role.' };
-    }
-    const baseMessage = 'Failed to update user role.';
-    const specificError = error.message ? `Details: ${error.message}` : 'An unknown error occurred.';
-    return { error: `${baseMessage} ${specificError}`.trim() };
+    const specificError = error.message || 'An unknown error occurred.';
+    return { error: `Failed to update user role. ${specificError}`.trim() };
+  }
+}
+
+export async function fetchPendingExpertQueriesAction(adminUserId: string): Promise<{ queries?: DiagnosisHistoryEntry[]; error?: string }> {
+  if (!adminUserId) {
+    console.error("fetchPendingExpertQueriesAction: adminUserId is missing.");
+    return { error: 'Admin user ID is missing. Cannot fetch queries.' };
+  }
+  // Add server-side admin role check here in a real scenario using Firebase Admin SDK
+  try {
+    const queries = await getPendingExpertQueriesFromDb();
+    return { queries };
+  } catch (error: any) {
+    console.error('Error in fetchPendingExpertQueriesAction:', error);
+    const specificError = error.message || 'An unknown error occurred.';
+    return { error: `Failed to fetch pending expert queries. ${specificError}`.trim() };
   }
 }

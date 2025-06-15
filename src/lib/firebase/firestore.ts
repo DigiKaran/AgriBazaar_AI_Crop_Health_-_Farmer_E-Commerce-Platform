@@ -1,4 +1,5 @@
 
+
 import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "./index";
 import type { DiagnosisHistoryEntry, ChatMessage, UserProfile, UserRole } from '@/types';
@@ -6,7 +7,7 @@ import type { DiagnosisHistoryEntry, ChatMessage, UserProfile, UserRole } from '
 // Diagnosis History
 const DIAGNOSIS_HISTORY_COLLECTION = 'diagnosis_history';
 
-export const saveDiagnosisHistory = async (entry: Omit<DiagnosisHistoryEntry, 'id' | 'timestamp' | 'status'>): Promise<string> => {
+export const saveDiagnosisHistory = async (entry: Omit<DiagnosisHistoryEntry, 'id' | 'timestamp' | 'status' | 'expertReviewRequested' | 'expertDiagnosis' | 'expertComments' | 'expertReviewedBy' | 'expertReviewedAt'>): Promise<string> => {
   try {
     const docRef = await addDoc(collection(db, DIAGNOSIS_HISTORY_COLLECTION), {
       ...entry,
@@ -24,6 +25,10 @@ export const saveDiagnosisHistory = async (entry: Omit<DiagnosisHistoryEntry, 'i
 export const updateDiagnosisHistoryEntry = async (id: string, updates: Partial<DiagnosisHistoryEntry>): Promise<void> => {
   const entryRef = doc(db, DIAGNOSIS_HISTORY_COLLECTION, id);
   try {
+    // If status is being updated to 'expert_reviewed', also set expertReviewedAt
+    if (updates.status === 'expert_reviewed' && !updates.expertReviewedAt) {
+        updates.expertReviewedAt = serverTimestamp();
+    }
     await updateDoc(entryRef, updates);
   } catch (error) {
     console.error("Error updating diagnosis history entry: ", error);
@@ -38,6 +43,29 @@ export const getDiagnosisHistoryEntry = async (id: string): Promise<DiagnosisHis
         return { id: docSnap.id, ...docSnap.data() } as DiagnosisHistoryEntry;
     }
     return null;
+};
+
+export const getPendingExpertQueries = async (): Promise<DiagnosisHistoryEntry[]> => {
+  try {
+    const q = query(
+      collection(db, DIAGNOSIS_HISTORY_COLLECTION),
+      where("expertReviewRequested", "==", true),
+      where("status", "==", "pending_expert"),
+      orderBy("timestamp", "asc") // Show oldest requests first
+    );
+    const querySnapshot = await getDocs(q);
+    const queries: DiagnosisHistoryEntry[] = [];
+    querySnapshot.forEach((doc) => {
+      queries.push({ id: doc.id, ...doc.data() } as DiagnosisHistoryEntry);
+    });
+    return queries;
+  } catch (error: any) {
+    console.error("Error fetching pending expert queries from DB: ", error);
+    let errorMessage = "Failed to fetch pending expert queries.";
+    if (error.message) errorMessage += ` Firebase: ${error.message}`;
+    if (error.code) errorMessage += ` (Code: ${error.code})`;
+    throw new Error(errorMessage);
+  }
 };
 
 
@@ -91,7 +119,6 @@ export const getAllUsers = async (): Promise<UserProfile[]> => {
     return users;
   } catch (error: any) {
     console.error("Error fetching all users from DB: ", error);
-    // Preserve original error details
     let errorMessage = "Failed to fetch users.";
     if (error.message) {
       errorMessage += ` Firebase: ${error.message}`;
@@ -107,8 +134,12 @@ export const updateUserRole = async (userId: string, newRole: UserRole): Promise
   try {
     const userRef = doc(db, USERS_COLLECTION, userId);
     await updateDoc(userRef, { role: newRole });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating user role: ", error);
-    throw new Error("Failed to update user role.");
+    let errorMessage = "Failed to update user role.";
+    if (error.message) errorMessage += ` Firebase: ${error.message}`;
+    if (error.code) errorMessage += ` (Code: ${error.code})`;
+    throw new Error(errorMessage);
   }
 };
+
