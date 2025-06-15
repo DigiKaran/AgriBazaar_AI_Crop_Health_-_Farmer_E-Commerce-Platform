@@ -11,10 +11,7 @@ import {
     updateDiagnosisHistoryEntry,
     getAllUsers as getAllUsersFromDb,
     updateUserRole as updateUserRoleInDb,
-    // getUserProfile // Not directly used here but good to be aware of for admin checks
 } from './firebase/firestore';
-// For more robust admin checks, you'd ideally use Firebase Admin SDK or verify a custom claim.
-// For now, actions are implicitly protected by the page access control.
 
 interface DiagnoseCropActionResult {
   diagnosis?: DiagnosisResult;
@@ -24,7 +21,7 @@ interface DiagnoseCropActionResult {
 
 export async function diagnoseCropAction(
   input: DiagnoseCropDiseaseInput,
-  userId?: string // Optional: Pass userId if available for saving history
+  userId?: string
 ): Promise<DiagnoseCropActionResult> {
   try {
     const aiResult = await diagnoseCropDisease(input);
@@ -111,8 +108,6 @@ export async function requestExpertReviewAction(
       expertReviewRequested: true,
       status: 'pending_expert'
     });
-    // In a full system, you might create a separate 'expert_queries' document here
-    // and notify experts.
     return { success: true, message: "Expert review requested successfully." };
   } catch (error) {
     console.error("Error requesting expert review:", error);
@@ -122,14 +117,24 @@ export async function requestExpertReviewAction(
 
 // Admin Actions
 export async function fetchAllUsersAction(adminUserId: string): Promise<{ users?: UserProfile[]; error?: string }> {
-  // Ideally, verify adminUserId belongs to an admin here using Firebase Admin SDK or custom claims.
-  // For now, relying on client-side route protection.
+  if (!adminUserId) {
+    console.error("fetchAllUsersAction: adminUserId is missing.");
+    return { error: 'Admin user ID is missing. Cannot fetch users.' };
+  }
+  // Note: True server-side role verification for adminUserId would ideally use Firebase Admin SDK.
+  // This action relies on the page-level access control in AdminPage.tsx.
   try {
     const users = await getAllUsersFromDb();
     return { users };
-  } catch (error) {
-    console.error('Error fetching all users action:', error);
-    return { error: 'Failed to fetch users.' };
+  } catch (error: any) { // Catch as 'any' to access error.code
+    console.error('Error in fetchAllUsersAction:', error);
+    if (error.code === 'permission-denied' || (error.message && error.message.toLowerCase().includes('permission denied'))) {
+        return { error: 'Permission denied when fetching users. Please verify Firestore rules and that your account has the "admin" role.' };
+    }
+    // Provide a more generic message if it's not clearly a permission issue, but include original if possible.
+    const baseMessage = 'Failed to fetch users.';
+    const specificError = error.message ? `Details: ${error.message}` : 'An unknown error occurred.';
+    return { error: `${baseMessage} ${specificError}`.trim() };
   }
 }
 
@@ -138,12 +143,22 @@ export async function updateUserRoleAction(
   newRole: UserRole, 
   adminUserId: string
 ): Promise<{ success?: boolean; error?: string }> {
-  // Ideally, verify adminUserId belongs to an admin here.
+  if (!adminUserId) {
+    console.error("updateUserRoleAction: adminUserId is missing.");
+    return { error: 'Admin user ID is missing. Cannot update role.' };
+  }
+   // Note: True server-side role verification for adminUserId would ideally use Firebase Admin SDK.
   try {
     await updateUserRoleInDb(targetUserId, newRole);
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating user role action:', error);
-    return { error: 'Failed to update user role.' };
+     if (error.code === 'permission-denied' || (error.message && error.message.toLowerCase().includes('permission denied'))) {
+        return { error: 'Permission denied when updating user role. Please verify Firestore rules and that your account has the "admin" role.' };
+    }
+    const baseMessage = 'Failed to update user role.';
+    const specificError = error.message ? `Details: ${error.message}` : 'An unknown error occurred.';
+    return { error: `${baseMessage} ${specificError}`.trim() };
   }
 }
+
