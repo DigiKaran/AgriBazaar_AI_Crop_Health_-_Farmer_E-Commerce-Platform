@@ -7,15 +7,18 @@ import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ShieldAlert, MessageSquareHeart, UserCheck } from 'lucide-react';
+import { ShieldAlert, MessageSquare, UserCheck } from 'lucide-react'; // Changed icon
 
 export default function ExpertPage() {
   const { userProfile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
+    // Redirect if not expert and not loading.
+    // If an admin lands here, they should also be able to proceed, or be redirected to /admin
+    // For simplicity, we just check for 'expert' role. Admins have their own dashboard.
     if (!loading && userProfile?.role !== 'expert') {
-      // router.push('/'); // Redirect if not expert
+       router.push('/'); 
     }
   }, [userProfile, loading, router]);
 
@@ -59,15 +62,20 @@ export default function ExpertPage() {
         </CardHeader>
         <CardContent>
           <p>This is your AgriCheck expert dashboard. Farmers may request your expertise on diagnoses they are not satisfied with.</p>
-          <p className="mt-4 text-sm text-muted-foreground">
-            (A list of pending queries from farmers would appear here. You would be able to view the original AI diagnosis, images, and provide your own assessment.)
+          <p className="mt-4 text-sm">
+            You can review and respond to these queries to help fellow farmers.
           </p>
           <div className="mt-6">
-            <Button variant="outline" disabled className="w-full">
-                <MessageSquareHeart className="mr-2 h-5 w-5"/>
-                View Pending Farmer Queries (Coming Soon)
+            <Button variant="default" className="w-full" asChild>
+                <Link href="/admin/expert-queries"> {/* Experts use the same query management page as admins for now */}
+                    <MessageSquare className="mr-2 h-5 w-5"/>
+                    View & Respond to Pending Farmer Queries
+                </Link>
             </Button>
           </div>
+           <p className="mt-4 text-xs text-muted-foreground">
+            Future enhancements may include direct communication channels and personalized recommendations.
+          </p>
         </CardContent>
       </Card>
     </div>

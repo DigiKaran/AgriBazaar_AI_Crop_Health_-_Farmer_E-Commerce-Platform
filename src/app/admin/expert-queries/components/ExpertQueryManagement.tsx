@@ -4,41 +4,43 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import type { DiagnosisHistoryEntry } from '@/types';
-import { fetchPendingExpertQueriesAction } from '@/lib/actions'; // We'll create this action
+import { fetchPendingExpertQueriesAction, submitExpertDiagnosisAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from '@/components/ui/textarea';
 import { Loader2, AlertTriangle, Inbox, CheckCircle, Edit3, Eye } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Textarea } from '@/components/ui/textarea'; // For expert comments
+import { Label } from '@/components/ui/label';
+
 
 interface ExpertQueryManagementProps {
-  adminUserId: string;
+  reviewerUserId: string; // Can be admin or expert
 }
 
-// Placeholder for submitting expert diagnosis - to be built out
-// interface ExpertReviewFormData {
-//   expertDiagnosis: string;
-//   expertComments: string;
-// }
+interface ExpertReviewFormData {
+  expertDiagnosis: string;
+  expertComments: string;
+}
 
-export default function ExpertQueryManagement({ adminUserId }: ExpertQueryManagementProps) {
+export default function ExpertQueryManagement({ reviewerUserId }: ExpertQueryManagementProps) {
   const [queries, setQueries] = useState<DiagnosisHistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  // const [selectedQuery, setSelectedQuery] = useState<DiagnosisHistoryEntry | null>(null);
-  // const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
-  // const [reviewFormData, setReviewFormData] = useState<ExpertReviewFormData>({ expertDiagnosis: '', expertComments: '' });
+  const [selectedQuery, setSelectedQuery] = useState<DiagnosisHistoryEntry | null>(null);
+  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
+  const [reviewFormData, setReviewFormData] = useState<ExpertReviewFormData>({ expertDiagnosis: '', expertComments: '' });
 
   const fetchQueries = async () => {
     setIsLoading(true);
     setError(null);
-    const result = await fetchPendingExpertQueriesAction(adminUserId);
+    const result = await fetchPendingExpertQueriesAction(reviewerUserId); // Pass reviewerUserId for potential server-side validation
     if (result.queries) {
       setQueries(result.queries);
     } else {
@@ -50,28 +52,46 @@ export default function ExpertQueryManagement({ adminUserId }: ExpertQueryManage
 
   useEffect(() => {
     fetchQueries();
-  }, [adminUserId]);
+  }, [reviewerUserId]);
 
-  // const handleOpenReviewDialog = (query: DiagnosisHistoryEntry) => {
-  //   setSelectedQuery(query);
-  //   setReviewFormData({ expertDiagnosis: query.diagnosis.disease, expertComments: '' }); // Pre-fill with AI diagnosis
-  //   setIsReviewDialogOpen(true);
-  // };
+  const handleOpenReviewDialog = (query: DiagnosisHistoryEntry) => {
+    setSelectedQuery(query);
+    setReviewFormData({ 
+      expertDiagnosis: query.diagnosis.disease, // Pre-fill with AI diagnosis
+      expertComments: '' 
+    });
+    setIsReviewDialogOpen(true);
+  };
 
-  // const handleReviewSubmit = async () => {
-  //   if (!selectedQuery || !selectedQuery.id) return;
-  //   // TODO: Call an action to submit the expert review
-  //   // const result = await submitExpertDiagnosisAction(adminUserId, selectedQuery.id, reviewFormData.expertDiagnosis, reviewFormData.expertComments);
-  //   // if (result.success) {
-  //   //   toast({ title: "Review Submitted", description: "Expert diagnosis saved."});
-  //   //   setIsReviewDialogOpen(false);
-  //   //   fetchQueries(); // Refresh list
-  //   // } else {
-  //   //   toast({ variant: 'destructive', title: 'Submission Failed', description: result.error });
-  //   // }
-  //   toast({ title: "Placeholder", description: "Review submission functionality to be implemented."});
-  //   setIsReviewDialogOpen(false);
-  // };
+  const handleReviewInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setReviewFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleReviewSubmit = async () => {
+    if (!selectedQuery || !selectedQuery.id) return;
+    if (!reviewFormData.expertDiagnosis.trim()) {
+      toast({ variant: 'destructive', title: 'Validation Error', description: 'Expert diagnosis cannot be empty.' });
+      return;
+    }
+    
+    setIsSubmittingReview(true);
+    const result = await submitExpertDiagnosisAction(
+      reviewerUserId, 
+      selectedQuery.id, 
+      reviewFormData.expertDiagnosis, 
+      reviewFormData.expertComments
+    );
+    
+    if (result.success) {
+      toast({ title: "Review Submitted", description: result.message || "Expert diagnosis saved successfully."});
+      setIsReviewDialogOpen(false);
+      fetchQueries(); // Refresh list
+    } else {
+      toast({ variant: 'destructive', title: 'Submission Failed', description: result.error || "Could not save expert review." });
+    }
+    setIsSubmittingReview(false);
+  };
 
 
   if (isLoading) {
@@ -148,8 +168,7 @@ export default function ExpertQueryManagement({ adminUserId }: ExpertQueryManage
                  <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={() => alert(`Reviewing query ${query.id} - Full review form coming soon.`)} // Placeholder
-                    // onClick={() => handleOpenReviewDialog(query)}
+                    onClick={() => handleOpenReviewDialog(query)}
                   >
                   <Edit3 className="mr-2 h-4 w-4" /> Review
                 </Button>
@@ -159,46 +178,60 @@ export default function ExpertQueryManagement({ adminUserId }: ExpertQueryManage
         </TableBody>
       </Table>
       
-      {/* Placeholder for Review Dialog - to be implemented fully later
       {selectedQuery && (
         <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Expert Review: {selectedQuery.diagnosis.disease}</DialogTitle>
+              <DialogTitle>Expert Review: AI diagnosed "{selectedQuery.diagnosis.disease}"</DialogTitle>
               <DialogDescription>Provide your expert assessment for this diagnosis query.</DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
               <div>
-                <h4 className="font-medium mb-1">Original Description:</h4>
-                <p className="text-sm text-muted-foreground p-2 border rounded-md bg-secondary/30">{selectedQuery.description}</p>
+                <h4 className="font-medium mb-1 text-sm">Original User Description:</h4>
+                <p className="text-sm text-muted-foreground p-3 border rounded-md bg-secondary/30 whitespace-pre-wrap">{selectedQuery.description}</p>
               </div>
               <div>
-                <label htmlFor="expertDiagnosis" className="block text-sm font-medium mb-1">Your Diagnosis</label>
+                <h4 className="font-medium mb-1 text-sm">AI Confidence:</h4>
+                <p className="text-sm text-muted-foreground p-2 border rounded-md bg-secondary/30">{(selectedQuery.diagnosis.confidence * 100).toFixed(0)}%</p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-1 text-sm">AI Treatment Recommendations:</h4>
+                <p className="text-sm text-muted-foreground p-3 border rounded-md bg-secondary/30 whitespace-pre-wrap">{selectedQuery.diagnosis.treatmentRecommendations}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="expertDiagnosis" className="text-sm font-medium">Your Diagnosis <span className="text-destructive">*</span></Label>
                 <Input 
-                  id="expertDiagnosis" 
+                  id="expertDiagnosis"
+                  name="expertDiagnosis"
                   value={reviewFormData.expertDiagnosis} 
-                  onChange={(e) => setReviewFormData(prev => ({...prev, expertDiagnosis: e.target.value}))}
+                  onChange={handleReviewInputChange}
+                  disabled={isSubmittingReview}
+                  placeholder="e.g., Downey Mildew, Nutrient Deficiency"
                 />
               </div>
-              <div>
-                <label htmlFor="expertComments" className="block text-sm font-medium mb-1">Comments/Recommendations</label>
+              <div className="space-y-2">
+                <Label htmlFor="expertComments" className="text-sm font-medium">Comments & Recommendations</Label>
                 <Textarea 
-                  id="expertComments" 
+                  id="expertComments"
+                  name="expertComments" 
                   rows={5} 
                   value={reviewFormData.expertComments} 
-                  onChange={(e) => setReviewFormData(prev => ({...prev, expertComments: e.target.value}))}
+                  onChange={handleReviewInputChange}
+                  disabled={isSubmittingReview}
                   placeholder="Provide detailed comments, alternative treatments, or confirm AI findings..."
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsReviewDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleReviewSubmit}><CheckCircle className="mr-2 h-4 w-4" /> Submit Review</Button>
+              <Button variant="outline" onClick={() => setIsReviewDialogOpen(false)} disabled={isSubmittingReview}>Cancel</Button>
+              <Button onClick={handleReviewSubmit} disabled={isSubmittingReview}>
+                {isSubmittingReview ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />} 
+                Submit Review
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
-      */}
     </div>
   );
 }

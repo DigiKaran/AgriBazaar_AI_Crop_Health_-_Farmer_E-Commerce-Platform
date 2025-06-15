@@ -15,8 +15,8 @@ export default function ExpertQueriesPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && userProfile?.role !== 'admin') {
-      router.push('/'); // Redirect if not admin and not loading
+    if (!loading && (!userProfile || (userProfile.role !== 'admin' && userProfile.role !== 'expert'))) {
+      router.push('/'); // Redirect if not admin/expert and not loading
     }
   }, [userProfile, loading, router]);
 
@@ -29,7 +29,7 @@ export default function ExpertQueriesPage() {
     );
   }
 
-  if (userProfile?.role !== 'admin') {
+  if (!userProfile || (userProfile.role !== 'admin' && userProfile.role !== 'expert')) {
     return (
       <div className="container mx-auto py-12 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
         <Card className="w-full max-w-md text-center shadow-xl rounded-xl">
@@ -39,7 +39,7 @@ export default function ExpertQueriesPage() {
           </CardHeader>
           <CardContent>
             <CardDescription className="text-lg">
-              You do not have permission to view this page. This area is restricted to administrators.
+              You do not have permission to view this page. This area is restricted to administrators and experts.
             </CardDescription>
             <Button asChild className="mt-6">
               <Link href="/">Go to Homepage</Link>
@@ -67,7 +67,7 @@ export default function ExpertQueriesPage() {
           <CardDescription>List of diagnosis entries awaiting expert review.</CardDescription>
         </CardHeader>
         <CardContent>
-          {currentUser && <ExpertQueryManagement adminUserId={currentUser.uid} />}
+          {currentUser && <ExpertQueryManagement reviewerUserId={currentUser.uid} />}
         </CardContent>
       </Card>
     </div>
