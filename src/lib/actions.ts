@@ -126,15 +126,17 @@ export async function fetchAllUsersAction(adminUserId: string): Promise<{ users?
   try {
     const users = await getAllUsersFromDb();
     return { users };
-  } catch (error: any) { // Catch as 'any' to access error.code
+  } catch (error: any) { // Catch as 'any' to access error properties
     console.error('Error in fetchAllUsersAction:', error);
-    if (error.code === 'permission-denied' || (error.message && error.message.toLowerCase().includes('permission denied'))) {
-        return { error: 'Permission denied when fetching users. Please verify Firestore rules and that your account has the "admin" role.' };
+    let detailedError = 'Failed to fetch users.';
+    if (error.message) {
+      detailedError = error.message; // Use the more detailed error message from firestore.ts
     }
-    // Provide a more generic message if it's not clearly a permission issue, but include original if possible.
-    const baseMessage = 'Failed to fetch users.';
-    const specificError = error.message ? `Details: ${error.message}` : 'An unknown error occurred.';
-    return { error: `${baseMessage} ${specificError}`.trim() };
+    // Check for common Firebase error codes if still needed, though message should be more specific now
+    if (error.code === 'permission-denied' || (error.message && error.message.toLowerCase().includes('permission denied'))) {
+        detailedError = 'Permission denied when fetching users. Please verify Firestore rules and that your account has the "admin" role.';
+    }
+    return { error: detailedError };
   }
 }
 
@@ -161,4 +163,3 @@ export async function updateUserRoleAction(
     return { error: `${baseMessage} ${specificError}`.trim() };
   }
 }
-

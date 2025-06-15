@@ -89,9 +89,17 @@ export const getAllUsers = async (): Promise<UserProfile[]> => {
       users.push({ uid: doc.id, ...doc.data() } as UserProfile);
     });
     return users;
-  } catch (error) {
-    console.error("Error fetching all users: ", error);
-    throw new Error("Failed to fetch users.");
+  } catch (error: any) {
+    console.error("Error fetching all users from DB: ", error);
+    // Preserve original error details
+    let errorMessage = "Failed to fetch users.";
+    if (error.message) {
+      errorMessage += ` Firebase: ${error.message}`;
+    }
+    if (error.code) {
+      errorMessage += ` (Code: ${error.code})`;
+    }
+    throw new Error(errorMessage);
   }
 };
 
