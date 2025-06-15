@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ShieldAlert, LayoutDashboard, Users, MessageSquareCheck, Settings, BarChart3, FileText } from 'lucide-react';
+import { ShieldAlert, LayoutDashboard, Users, MessageSquare, Settings, BarChart3, FileText } from 'lucide-react';
 import UserManagementTable from './components/UserManagementTable';
 
 export default function AdminPage() {
@@ -73,7 +73,7 @@ export default function AdminPage() {
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <Button variant="outline" asChild>
               <Link href="/admin/expert-queries">
-                <MessageSquareCheck className="mr-2 h-5 w-5"/> Manage Expert Queries
+                <MessageSquare className="mr-2 h-5 w-5"/> Manage Expert Queries
               </Link>
             </Button>
             <Button variant="outline" disabled>
@@ -91,4 +91,3 @@ export default function AdminPage() {
     </div>
   );
 }
-

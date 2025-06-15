@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ShieldAlert, MessageSquareCheck, Loader2 } from 'lucide-react';
+import { ShieldAlert, MessageSquare, Loader2 } from 'lucide-react';
 import ExpertQueryManagement from './components/ExpertQueryManagement';
 
 export default function ExpertQueriesPage() {
@@ -54,7 +54,7 @@ export default function ExpertQueriesPage() {
     <div className="container mx-auto py-8 px-4">
       <header className="mb-8">
         <h1 className="text-4xl font-headline flex items-center gap-3">
-          <MessageSquareCheck className="h-10 w-10 text-primary" /> Manage Expert Queries
+          <MessageSquare className="h-10 w-10 text-primary" /> Manage Expert Queries
         </h1>
         <p className="text-muted-foreground mt-2">
           Review diagnosis queries flagged by users for expert assessment.
