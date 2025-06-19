@@ -7,19 +7,20 @@ AgriCheck is a modern web application designed to assist farmers in India by lev
 
 1.  [Key Features](#key-features)
 2.  [Technology Stack](#technology-stack)
-3.  [Getting Started](#getting-started)
+3.  [Dependencies & Build Tools](#dependencies--build-tools)
+4.  [Getting Started](#getting-started)
     *   [Prerequisites](#prerequisites)
     *   [Firebase Setup](#firebase-setup)
     *   [Environment Variables](#environment-variables)
     *   [Installation](#installation)
     *   [Running the Application](#running-the-application)
-4.  [Firebase Configuration Notes](#firebase-configuration-notes)
+5.  [Firebase Configuration Notes](#firebase-configuration-notes)
     *   [Authentication: Authorized Domains](#authentication-authorized-domains)
     *   [Firestore: Security Rules](#firestore-security-rules)
-5.  [Folder Structure](#folder-structure)
-6.  [Available Scripts](#available-scripts)
-7.  [Contributing](#contributing)
-8.  [License](#license)
+6.  [Folder Structure](#folder-structure)
+7.  [Available Scripts](#available-scripts)
+8.  [Contributing](#contributing)
+9.  [License](#license)
 
 ## Key Features
 
@@ -67,12 +68,17 @@ AgriCheck is a modern web application designed to assist farmers in India by lev
 *   **Date Utilities:** [date-fns](https://date-fns.org/)
 *   **Linting/Formatting:** ESLint, Prettier (implicitly, via Next.js defaults)
 
+## Dependencies & Build Tools
+
+*   **Runtime Environment:** [Node.js](https://nodejs.org/) (v18.x or later recommended)
+*   **Package Manager:** [npm](https://www.npmjs.com/) (comes with Node.js) - Used for managing project dependencies and running scripts.
+
 ## Getting Started
 
 ### Prerequisites
 
 *   [Node.js](https://nodejs.org/) (v18.x or later recommended)
-*   [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+*   [npm](https://www.npmjs.com/) (or [yarn](https://yarnpkg.com/) if preferred, though scripts use npm)
 
 ### Firebase Setup
 
@@ -101,10 +107,8 @@ The `src/ai/genkit.ts` file is configured to use `googleai/gemini-2.0-flash` whi
 Clone the repository and install the dependencies:
 ```bash
 git clone <your-repository-url>
-cd agricheck-project
+cd agricheck-project # Or your project directory name
 npm install
-# or
-# yarn install
 ```
 
 ### Running the Application
@@ -192,4 +196,4 @@ Contributions are welcome! Please follow standard coding practices, ensure your 
 ## License
 
 This project is licensed under the MIT License. (Or specify your chosen license).
-```
+
