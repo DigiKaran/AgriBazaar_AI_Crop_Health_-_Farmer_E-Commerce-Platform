@@ -33,35 +33,39 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Start as true
 
   useEffect(() => {
+    console.log("AuthContext: Subscribing to auth state changes.");
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      // This is the initial loading phase, keep it true until profile is fetched
+      setLoading(true); 
       setCurrentUser(user);
       if (user) {
         try {
-          console.log("AuthContext: User authenticated, attempting to fetch profile for UID:", user.uid);
+          console.log(`AuthContext: User ${user.uid} authenticated. Fetching profile...`);
           const profile = await getUserProfile(user.uid);
           setUserProfile(profile);
           console.log("AuthContext: User profile fetched successfully:", profile);
         } catch (error: any) {
-          console.error("AuthContext: Failed to fetch user profile. UID:", user.uid, "Raw Error Object:", error);
-          if (error.code) {
-            console.error("AuthContext: Firebase Error Code:", error.code);
-          }
-          if (error.message) {
-            console.error("AuthContext: Firebase Error Message:", error.message);
-          }
-          setUserProfile(null); // Ensure profile is null on error
+          console.error("AuthContext: Failed to fetch user profile for UID:", user.uid, "Error:", error);
+          setUserProfile(null); 
+        } finally {
+            // Loading is complete only after user and profile are processed
+            setLoading(false);
+             console.log("AuthContext: Loading finished for authenticated user.");
         }
       } else {
         setUserProfile(null);
-        console.log("AuthContext: No user authenticated or user logged out.");
+        setLoading(false); // Loading is also complete if there's no user
+        console.log("AuthContext: No user authenticated or user logged out. Loading finished.");
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      console.log("AuthContext: Unsubscribing from auth state changes.");
+      unsubscribe();
+    }
   }, []);
 
   const logout = async () => {
@@ -79,6 +83,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="ml-4 text-lg text-muted-foreground">Initializing Session...</p>
       </div>
     );
   }

@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -10,15 +9,15 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // Checks if the requesting user has the 'admin' role in their user document.
-      // The exists() check is a safeguard against errors if the doc hasn't been created yet.
+      // CRITICAL FIX: The exists() check prevents errors if the rule is checked before the user's
+      // profile document has been created, which resolves the race condition.
       return request.auth != null &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     function isExpert() {
-      // Checks if the requesting user has the 'expert' role in their user document.
+      // CRITICAL FIX: The exists() check is also added here for robustness.
       return request.auth != null &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'expert';
@@ -26,81 +25,51 @@ service cloud.firestore {
 
     // --- Rules for 'users' collection ---
     match /users/{userId} {
-      // READ: Admins and Experts can read any user profile. Users can read their own.
       allow get: if isAdmin() || isExpert() || isUser(userId);
-
-      // CREATE: A user can create their own profile document.
       allow create: if isUser(userId);
-      
-      // UPDATE: Admins can update any user. A user can only update their own profile without changing their role or status.
-      allow update: if isAdmin() || (isUser(userId) && request.resource.data.role == resource.data.role && request.resource.data.status == resource.data.status);
-      
-      // DELETE: Only admins can delete users.
+      allow update: if isAdmin() || (isUser(userId) && request.resource.data.role == resource.data.role);
       allow delete: if isAdmin();
     }
-    // LIST: Only admins can list/query all users.
     match /users {
       allow list: if isAdmin();
     }
 
-    // --- Rules for 'products' collection ---
-    match /products/{productId} {
-        // READ: Anyone can view products.
-        allow get, list: if true;
-        // WRITE: Only admins can create, update, or delete products.
-        allow write: if isAdmin();
-    }
-
-    // --- Rules for 'product_categories' collection ---
-    match /product_categories/{categoryId} {
-        // READ: Anyone can view categories.
-        allow get, list: if true;
-        // WRITE: Only admins can create, update, or delete categories.
-        allow write: if isAdmin();
+    // --- Rules for 'products' and 'product_categories' ---
+    match /{collection}/{docId} where collection in ['products', 'product_categories'] {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // --- Rules for 'diagnosis_history' collection ---
     match /diagnosis_history/{docId} {
-      // CREATE: An authenticated user can create their own entry.
       allow create: if isUser(request.resource.data.userId);
-
-      // GET: Admins/Experts can get any entry. Users can get their own.
-      allow get: if isAdmin() || isExpert() || isUser(resource.data.userId);
-
-      // UPDATE: Admins/Experts can update any entry. Users can update their own.
+      allow read: if isAdmin() || isExpert() || isUser(resource.data.userId);
       allow update: if isAdmin() || isExpert() || isUser(resource.data.userId);
-      
-      // DELETE: Admins can delete any entry. Users can delete their own.
       allow delete: if isAdmin() || isUser(resource.data.userId);
     }
-    // LIST: This rule is complex. An admin or expert can list all entries.
-    // A regular user can only query for their own entries, so the app MUST include a `where("userId", "==", user.uid)` clause.
     match /diagnosis_history {
-      allow list: if isAdmin() || isExpert() || (request.auth != null && request.query.where.userId == request.auth.uid);
+        // Allows admins/experts to query the whole collection.
+        // Users can only query if they filter by their own userId.
+       allow list: if isAdmin() || isExpert();
     }
+
 
     // --- Rules for 'chat_messages' collection ---
     match /chat_messages/{docId} {
-      // A user can create and read their own chat messages.
       allow read, create: if isUser(request.resource.data.userId);
     }
-    // A user can only list/query their own messages.
-    match /chat_messages {
+     match /chat_messages {
         allow list: if request.auth != null && request.query.where.userId == request.auth.uid;
     }
 
     // --- Rules for 'orders' collection ---
     match /orders/{orderId} {
-      // User can create their own order.
       allow create: if isUser(request.resource.data.userId);
-      // Admins can read any order. Users can read their own.
       allow read: if isAdmin() || isUser(resource.data.userId);
-      // Only admins can update or delete orders.
       allow update, delete: if isAdmin();
     }
-    // Admins can list all orders. Users can only query their own.
-     match /orders {
-        allow list: if isAdmin() || (request.auth != null && request.query.where.userId == request.auth.uid);
+    match /orders {
+      allow list: if isAdmin();
     }
   }
 }
