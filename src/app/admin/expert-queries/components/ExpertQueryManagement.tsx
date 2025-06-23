@@ -40,7 +40,7 @@ export default function ExpertQueryManagement({ reviewerUserId }: ExpertQueryMan
   const fetchQueries = async () => {
     setIsLoading(true);
     setError(null);
-    const result = await fetchPendingExpertQueriesAction(reviewerUserId); // Pass reviewerUserId for potential server-side validation
+    const result = await fetchPendingExpertQueriesAction();
     if (result.queries) {
       setQueries(result.queries);
     } else {
@@ -154,7 +154,7 @@ export default function ExpertQueryManagement({ reviewerUserId }: ExpertQueryMan
                   )}
               </TableCell>
               <TableCell className="text-center">
-                {query.photoDataUri && (
+                {query.photoURL && (
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button variant="ghost" size="icon"><Eye className="h-5 w-5"/></Button>
@@ -164,7 +164,7 @@ export default function ExpertQueryManagement({ reviewerUserId }: ExpertQueryMan
                         <DialogTitle>Crop Image</DialogTitle>
                       </DialogHeader>
                       <div className="relative aspect-video w-full mt-2 rounded-md overflow-hidden">
-                        <Image src={query.photoDataUri} alt="Crop diagnosis image" layout="fill" objectFit="contain" />
+                        <Image src={query.photoURL} alt="Crop diagnosis image" layout="fill" objectFit="contain" />
                       </div>
                     </DialogContent>
                   </Dialog>

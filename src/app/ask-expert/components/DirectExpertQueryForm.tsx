@@ -16,6 +16,7 @@ import { submitDirectExpertQueryAction } from '@/lib/actions';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { uploadImageForDiagnosis } from '@/lib/firebase/storage';
 
 const directQueryFormSchema = z.object({
   image: z.custom<FileList>((val) => val instanceof FileList && val.length > 0, 'Please upload an image of the crop.'),
@@ -23,15 +24,6 @@ const directQueryFormSchema = z.object({
 });
 
 type DirectQueryFormValues = z.infer<typeof directQueryFormSchema>;
-
-const fileToDataUri = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-};
 
 export default function DirectExpertQueryForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -79,8 +71,9 @@ export default function DirectExpertQueryForm() {
     }
 
     try {
-      const photoDataUri = await fileToDataUri(data.image[0]);
-      const result = await submitDirectExpertQueryAction({ photoDataUri, description: data.description }, currentUser.uid);
+      const file = data.image[0];
+      const photoURL = await uploadImageForDiagnosis(file, currentUser.uid);
+      const result = await submitDirectExpertQueryAction({ photoURL, description: data.description }, currentUser.uid);
 
       if (result.success) {
         setIsSuccess(true);
@@ -95,7 +88,8 @@ export default function DirectExpertQueryForm() {
         setError(result.error || 'Failed to submit query. Please try again.');
       }
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.';
+      setError(errorMessage);
       console.error(err);
     } finally {
       setIsLoading(false);

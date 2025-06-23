@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { uploadImageForDiagnosis } from '@/lib/firebase/storage';
 
 const diagnosisFormSchema = z.object({
   image: z.custom<FileList>((val) => val instanceof FileList && val.length > 0, 'Please upload an image of the crop.'),
@@ -103,8 +104,13 @@ export default function DiagnosisForm() {
     }
 
     try {
-      const photoDataUri = await fileToDataUri(data.image[0]);
-      const result = await diagnoseCropAction({ photoDataUri, description: data.description }, currentUser.uid);
+      const file = data.image[0];
+      const [photoDataUri, photoURL] = await Promise.all([
+        fileToDataUri(file),
+        uploadImageForDiagnosis(file, currentUser.uid)
+      ]);
+      
+      const result = await diagnoseCropAction({ photoDataUri, photoURL, description: data.description }, currentUser.uid);
 
       if (result.error) {
         setError(result.error);
@@ -129,8 +135,8 @@ export default function DiagnosisForm() {
       } else {
         setError('Unexpected response from diagnosis service.');
       }
-    } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred. Please try again.');
       console.error(err);
     } finally {
       setIsLoadingDiagnosis(false);

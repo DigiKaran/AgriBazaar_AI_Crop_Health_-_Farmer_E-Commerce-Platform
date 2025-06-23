@@ -70,7 +70,7 @@ export interface LocalizedFarmingTipsOutput {
 export interface DiagnosisHistoryEntry {
   id?: string; // Firestore document ID
   userId: string;
-  photoDataUri?: string; // Or a URL if storing in Cloud Storage
+  photoURL?: string; // URL from Firebase Storage
   description: string;
   diagnosis?: DiagnosisResult | null; // Optional to support direct-to-expert queries
   timestamp: string | null;

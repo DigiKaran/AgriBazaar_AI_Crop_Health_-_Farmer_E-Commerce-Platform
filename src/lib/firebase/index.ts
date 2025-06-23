@@ -2,12 +2,14 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore, enableIndexedDbPersistence, CACHE_SIZE_UNLIMITED, doc, getDoc, writeBatch, collection } from "firebase/firestore";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 import { firebaseConfig } from "./config";
 import type { Product } from '@/types';
 
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
+let storage: FirebaseStorage;
 
 if (getApps().length === 0) {
   app = initializeApp(firebaseConfig);
@@ -17,10 +19,11 @@ if (getApps().length === 0) {
 
 auth = getAuth(app);
 db = getFirestore(app);
+storage = getStorage(app);
 
 // Function to create placeholder documents to ensure collections are visible in Firestore console
 const ensureCollectionsExist = async () => {
-  const collectionsToEnsure = ['orders']; // Products and categories are handled by seeding
+  const collectionsToEnsure = ['orders', 'diagnosis_history'];
   const batch = writeBatch(db);
   let writesMade = false;
 
@@ -132,4 +135,4 @@ try {
     seedDatabase();
 }
 
-export { app, auth, db };
+export { app, auth, db, storage };
