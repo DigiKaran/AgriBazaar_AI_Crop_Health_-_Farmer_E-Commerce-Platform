@@ -2,6 +2,19 @@ import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, do
 import { db } from "./index";
 import type { DiagnosisHistoryEntry, ChatMessage, UserProfile, UserRole, ProductCategory, Order, OrderBase, DiagnosisResult, Product } from '@/types';
 
+// Helper to convert all Firestore Timestamps in a document to ISO strings
+const serializeDocumentTimestamps = (docData: any) => {
+  if (!docData) return docData;
+  const data = { ...docData };
+  for (const key in data) {
+    const value = data[key];
+    if (value && typeof value.toDate === 'function') {
+      data[key] = value.toDate().toISOString();
+    }
+  }
+  return data;
+};
+
 // Diagnosis History
 const DIAGNOSIS_HISTORY_COLLECTION = 'diagnosis_history';
 
@@ -22,7 +35,7 @@ export const updateDiagnosisHistoryEntry = async (id: string, updates: Partial<D
   try {
     // If status is being updated to 'expert_reviewed', also set expertReviewedAt
     if (updates.status === 'expert_reviewed' && !updates.expertReviewedAt) {
-        updates.expertReviewedAt = serverTimestamp();
+        (updates as any).expertReviewedAt = serverTimestamp();
     }
     await updateDoc(entryRef, updates as any); // Use 'as any' for serverTimestamp
   } catch (error) {
@@ -35,15 +48,13 @@ export const getDiagnosisHistoryEntry = async (id: string): Promise<DiagnosisHis
     const entryRef = doc(db, DIAGNOSIS_HISTORY_COLLECTION, id);
     const docSnap = await getDoc(entryRef);
     if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as DiagnosisHistoryEntry;
+        return { id: docSnap.id, ...serializeDocumentTimestamps(docSnap.data()) } as DiagnosisHistoryEntry;
     }
     return null;
 };
 
 export const getPendingExpertQueries = async (): Promise<DiagnosisHistoryEntry[]> => {
   try {
-    // Simplified query to avoid needing a composite index.
-    // We will sort the results in code after fetching.
     const q = query(
       collection(db, DIAGNOSIS_HISTORY_COLLECTION),
       where("status", "==", "pending_expert")
@@ -51,13 +62,12 @@ export const getPendingExpertQueries = async (): Promise<DiagnosisHistoryEntry[]
     const querySnapshot = await getDocs(q);
     const queries: DiagnosisHistoryEntry[] = [];
     querySnapshot.forEach((doc) => {
-      queries.push({ id: doc.id, ...doc.data() } as DiagnosisHistoryEntry);
+      queries.push({ id: doc.id, ...serializeDocumentTimestamps(doc.data()) } as DiagnosisHistoryEntry);
     });
 
-    // Sort the queries by timestamp in ascending order (oldest first)
     queries.sort((a, b) => {
-        const timeA = a.timestamp?.seconds || 0;
-        const timeB = b.timestamp?.seconds || 0;
+        const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
         return timeA - timeB;
     });
 
@@ -77,7 +87,7 @@ export const getAllDiagnosisEntries = async (): Promise<DiagnosisHistoryEntry[]>
     const querySnapshot = await getDocs(q);
     const entries: DiagnosisHistoryEntry[] = [];
     querySnapshot.forEach((doc) => {
-      entries.push({ id: doc.id, ...doc.data() } as DiagnosisHistoryEntry);
+      entries.push({ id: doc.id, ...serializeDocumentTimestamps(doc.data()) } as DiagnosisHistoryEntry);
     });
     return entries;
   } catch (error: any) {
@@ -114,7 +124,7 @@ export const getChatMessages = async (userId: string, sessionId: string): Promis
     const querySnapshot = await getDocs(messagesQuery);
     const messages: ChatMessage[] = [];
     querySnapshot.forEach((doc) => {
-      messages.push({ id: doc.id, ...doc.data() } as ChatMessage);
+      messages.push({ id: doc.id, ...serializeDocumentTimestamps(doc.data()) } as ChatMessage);
     });
     return messages;
   } catch (error) {
@@ -132,7 +142,7 @@ export const getAllUsers = async (): Promise<UserProfile[]> => {
     const querySnapshot = await getDocs(usersQuery);
     const users: UserProfile[] = [];
     querySnapshot.forEach((doc) => {
-      users.push({ uid: doc.id, ...doc.data() } as UserProfile);
+      users.push({ uid: doc.id, ...serializeDocumentTimestamps(doc.data()) } as UserProfile);
     });
     return users;
   } catch (error: any) {

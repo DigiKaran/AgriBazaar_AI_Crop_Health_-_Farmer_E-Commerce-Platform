@@ -40,7 +40,7 @@ export interface UserProfile {
   email: string | null;
   displayName?: string | null;
   photoURL?: string | null;
-  createdAt: any; // Firestore Timestamp or { seconds: number, nanoseconds: number }
+  createdAt: string | null;
   role: UserRole;
   status?: 'active' | 'inactive';
 }
@@ -73,12 +73,12 @@ export interface DiagnosisHistoryEntry {
   photoDataUri?: string; // Or a URL if storing in Cloud Storage
   description: string;
   diagnosis?: DiagnosisResult | null; // Optional to support direct-to-expert queries
-  timestamp: any; // Firestore serverTimestamp
+  timestamp: string | null;
   expertReviewRequested?: boolean;
   expertDiagnosis?: string | null;
   expertComments?: string | null;
   expertReviewedBy?: string | null; // UID of the expert/admin who reviewed
-  expertReviewedAt?: any; // Firestore serverTimestamp of review
+  expertReviewedAt?: string | null;
   status?: 'ai_diagnosed' | 'pending_expert' | 'expert_reviewed' | 'closed' | 'ai_skipped';
 }
 
@@ -88,7 +88,7 @@ export interface ChatMessage {
   sessionId: string;
   sender: 'user' | 'bot';
   text: string;
-  timestamp: any; // Firestore serverTimestamp
+  timestamp: string | null;
 }
 
 export interface ChatMessageHistory {
@@ -129,5 +129,5 @@ export interface OrderBase {
 
 export interface Order extends OrderBase {
     id: string; // Firestore Document ID
-    createdAt: any; // Firestore serverTimestamp
+    createdAt: string | null;
 }

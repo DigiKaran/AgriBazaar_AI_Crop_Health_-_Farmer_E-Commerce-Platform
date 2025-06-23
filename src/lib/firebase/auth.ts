@@ -95,11 +95,13 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
   const snapshot = await getDoc(userRef);
   if (snapshot.exists()) {
     const data = snapshot.data();
-    // Provide default values for role and status if they don't exist on the document
+    const createdAtTimestamp = data.createdAt;
+
     const profile: UserProfile = {
       role: 'farmer',
       status: 'active',
-      ...data
+      ...data,
+      createdAt: createdAtTimestamp && createdAtTimestamp.toDate ? createdAtTimestamp.toDate().toISOString() : null,
     } as UserProfile;
     return profile;
   }

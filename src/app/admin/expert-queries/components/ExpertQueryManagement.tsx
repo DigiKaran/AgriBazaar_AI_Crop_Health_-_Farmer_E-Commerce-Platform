@@ -140,7 +140,7 @@ export default function ExpertQueryManagement({ reviewerUserId }: ExpertQueryMan
           {queries.map((query) => (
             <TableRow key={query.id}>
               <TableCell>
-                {query.timestamp?.seconds ? formatDistanceToNow(new Date(query.timestamp.seconds * 1000), { addSuffix: true }) : 'Unknown date'}
+                {query.timestamp ? formatDistanceToNow(new Date(query.timestamp), { addSuffix: true }) : 'Unknown date'}
               </TableCell>
               <TableCell className="truncate max-w-[150px] text-xs">{query.userId}</TableCell>
               <TableCell>

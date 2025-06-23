@@ -133,7 +133,7 @@ export default function UserManagementTable({ adminUserId }: UserManagementTable
               </TableCell>
               <TableCell>{user.email}</TableCell>
               <TableCell>
-                {user.createdAt?.seconds ? formatDistanceToNow(new Date(user.createdAt.seconds * 1000), { addSuffix: true }) : 'Unknown'}
+                {user.createdAt ? formatDistanceToNow(new Date(user.createdAt), { addSuffix: true }) : 'Unknown'}
               </TableCell>
               <TableCell>
                  <div className="flex items-center gap-2">
