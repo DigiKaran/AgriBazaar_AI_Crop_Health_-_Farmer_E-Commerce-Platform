@@ -1,3 +1,4 @@
+
 'use server';
 
 import { diagnoseCropDisease, type DiagnoseCropDiseaseInput } from '@/ai/flows/diagnose-crop-disease';
@@ -17,6 +18,7 @@ import {
     deleteProductCategory as deleteProductCategoryFromDb,
     getAllDiagnosisEntries as getAllDiagnosisEntriesFromDb,
     saveOrder as saveOrderToDb,
+    saveDirectExpertQuery as saveDirectExpertQueryToDb
 } from './firebase/firestore';
 
 interface DiagnoseCropActionResult {
@@ -56,6 +58,27 @@ export async function diagnoseCropAction(
     return { error: `Failed to diagnose crop. ${error.message || ''}`.trim() };
   }
 }
+
+export async function submitDirectExpertQueryAction(
+  input: { photoDataUri: string, description: string },
+  userId: string
+): Promise<{ success: boolean; historyId?: string; error?: string }> {
+  if (!userId) {
+    return { success: false, error: 'User is not authenticated.' };
+  }
+  try {
+    const historyId = await saveDirectExpertQueryToDb({
+      userId,
+      photoDataUri: input.photoDataUri,
+      description: input.description,
+    });
+    return { success: true, historyId };
+  } catch (error: any) {
+    console.error('Error in submitDirectExpertQueryAction:', error);
+    return { success: false, error: `Failed to submit query. ${error.message || ''}`.trim() };
+  }
+}
+
 
 export async function generatePreventativeMeasuresAction(
   input: GeneratePreventativeMeasuresInput

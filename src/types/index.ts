@@ -72,14 +72,14 @@ export interface DiagnosisHistoryEntry {
   userId: string;
   photoDataUri?: string; // Or a URL if storing in Cloud Storage
   description: string;
-  diagnosis: DiagnosisResult;
+  diagnosis?: DiagnosisResult | null; // Optional to support direct-to-expert queries
   timestamp: any; // Firestore serverTimestamp
   expertReviewRequested?: boolean;
   expertDiagnosis?: string | null;
   expertComments?: string | null;
   expertReviewedBy?: string | null; // UID of the expert/admin who reviewed
   expertReviewedAt?: any; // Firestore serverTimestamp of review
-  status?: 'ai_diagnosed' | 'pending_expert' | 'expert_reviewed' | 'closed';
+  status?: 'ai_diagnosed' | 'pending_expert' | 'expert_reviewed' | 'closed' | 'ai_skipped';
 }
 
 export interface ChatMessage {

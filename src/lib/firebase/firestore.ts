@@ -20,6 +20,22 @@ export const saveDiagnosisHistory = async (entry: Omit<DiagnosisHistoryEntry, 'i
   }
 };
 
+export const saveDirectExpertQuery = async (entry: {userId: string, photoDataUri: string, description: string}): Promise<string> => {
+  try {
+    const docRef = await addDoc(collection(db, DIAGNOSIS_HISTORY_COLLECTION), {
+      ...entry,
+      diagnosis: null,
+      timestamp: serverTimestamp(),
+      expertReviewRequested: true,
+      status: 'pending_expert', // Start directly in the expert queue
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error("Error saving direct expert query: ", error);
+    throw new Error("Failed to save direct expert query.");
+  }
+};
+
 export const updateDiagnosisHistoryEntry = async (id: string, updates: Partial<DiagnosisHistoryEntry>): Promise<void> => {
   const entryRef = doc(db, DIAGNOSIS_HISTORY_COLLECTION, id);
   try {

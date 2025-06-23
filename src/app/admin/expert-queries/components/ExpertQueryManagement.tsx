@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCap
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, AlertTriangle, Inbox, CheckCircle, Edit3, Eye } from 'lucide-react';
+import { Loader2, AlertTriangle, Inbox, CheckCircle, Edit3, Eye, User, Brain } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
@@ -57,7 +57,7 @@ export default function ExpertQueryManagement({ reviewerUserId }: ExpertQueryMan
   const handleOpenReviewDialog = (query: DiagnosisHistoryEntry) => {
     setSelectedQuery(query);
     setReviewFormData({ 
-      expertDiagnosis: query.diagnosis.disease, // Pre-fill with AI diagnosis
+      expertDiagnosis: query.diagnosis?.disease || '', // Pre-fill with AI diagnosis or empty string
       expertComments: '' 
     });
     setIsReviewDialogOpen(true);
@@ -131,7 +131,7 @@ export default function ExpertQueryManagement({ reviewerUserId }: ExpertQueryMan
           <TableRow>
             <TableHead className="w-[150px]">Requested</TableHead>
             <TableHead>User ID</TableHead>
-            <TableHead>AI Diagnosis</TableHead>
+            <TableHead>Analysis</TableHead>
             <TableHead className="text-center w-[100px]">Image</TableHead>
             <TableHead className="text-right w-[150px]">Actions</TableHead>
           </TableRow>
@@ -144,8 +144,14 @@ export default function ExpertQueryManagement({ reviewerUserId }: ExpertQueryMan
               </TableCell>
               <TableCell className="truncate max-w-[150px] text-xs">{query.userId}</TableCell>
               <TableCell>
-                <div className="font-medium">{query.diagnosis.disease}</div>
-                <Badge variant="outline" className="mt-1">Conf: {(query.diagnosis.confidence * 100).toFixed(0)}%</Badge>
+                {query.diagnosis ? (
+                    <>
+                      <div className="font-medium flex items-center gap-2"><Brain className="h-4 w-4 text-purple-500" />{query.diagnosis.disease}</div>
+                      <Badge variant="outline" className="mt-1">AI Conf: {(query.diagnosis.confidence * 100).toFixed(0)}%</Badge>
+                    </>
+                  ) : (
+                    <div className="font-medium text-muted-foreground italic flex items-center gap-2"><User className="h-4 w-4 text-blue-500" />Direct Submission</div>
+                  )}
               </TableCell>
               <TableCell className="text-center">
                 {query.photoDataUri && (
@@ -182,7 +188,7 @@ export default function ExpertQueryManagement({ reviewerUserId }: ExpertQueryMan
         <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Expert Review: AI diagnosed "{selectedQuery.diagnosis.disease}"</DialogTitle>
+              <DialogTitle>Expert Review: {selectedQuery.diagnosis ? `AI Diagnosed "${selectedQuery.diagnosis.disease}"` : 'Direct User Query'}</DialogTitle>
               <DialogDescription>Provide your expert assessment for this diagnosis query.</DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
@@ -190,14 +196,18 @@ export default function ExpertQueryManagement({ reviewerUserId }: ExpertQueryMan
                 <h4 className="font-medium mb-1 text-sm">Original User Description:</h4>
                 <p className="text-sm text-muted-foreground p-3 border rounded-md bg-secondary/30 whitespace-pre-wrap">{selectedQuery.description}</p>
               </div>
-              <div>
-                <h4 className="font-medium mb-1 text-sm">AI Confidence:</h4>
-                <p className="text-sm text-muted-foreground p-2 border rounded-md bg-secondary/30">{(selectedQuery.diagnosis.confidence * 100).toFixed(0)}%</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-1 text-sm">AI Treatment Recommendations:</h4>
-                <p className="text-sm text-muted-foreground p-3 border rounded-md bg-secondary/30 whitespace-pre-wrap">{selectedQuery.diagnosis.treatmentRecommendations}</p>
-              </div>
+              {selectedQuery.diagnosis && (
+                <>
+                <div>
+                  <h4 className="font-medium mb-1 text-sm">AI Confidence:</h4>
+                  <p className="text-sm text-muted-foreground p-2 border rounded-md bg-secondary/30">{(selectedQuery.diagnosis.confidence * 100).toFixed(0)}%</p>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-1 text-sm">AI Treatment Recommendations:</h4>
+                  <p className="text-sm text-muted-foreground p-3 border rounded-md bg-secondary/30 whitespace-pre-wrap">{selectedQuery.diagnosis.treatmentRecommendations}</p>
+                </div>
+                </>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="expertDiagnosis" className="text-sm font-medium">Your Diagnosis <span className="text-destructive">*</span></Label>
                 <Input 
