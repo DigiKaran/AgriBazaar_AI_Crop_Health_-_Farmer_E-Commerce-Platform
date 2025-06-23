@@ -1,36 +1,21 @@
 import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, doc, updateDoc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "./index";
-import type { DiagnosisHistoryEntry, ChatMessage, UserProfile, UserRole, ProductCategory, Order, OrderBase, DiagnosisResult } from '@/types';
+import type { DiagnosisHistoryEntry, ChatMessage, UserProfile, UserRole, ProductCategory, Order, OrderBase, DiagnosisResult, Product } from '@/types';
 
 // Diagnosis History
 const DIAGNOSIS_HISTORY_COLLECTION = 'diagnosis_history';
 
-export const saveDiagnosisQueryToDb = async (entry: {
-  userId: string;
-  photoDataUri: string;
-  description: string;
-  diagnosis?: DiagnosisResult | null;
-}): Promise<string> => {
-  try {
-    const isDirectQuery = !entry.diagnosis;
-    
-    const docData: Omit<DiagnosisHistoryEntry, 'id'> = {
-      userId: entry.userId,
-      photoDataUri: entry.photoDataUri,
-      description: entry.description,
-      diagnosis: entry.diagnosis || null,
-      timestamp: serverTimestamp(),
-      expertReviewRequested: isDirectQuery,
-      status: isDirectQuery ? 'pending_expert' : 'ai_diagnosed',
-    };
+// A generic function to save any diagnosis entry
+export const saveDiagnosisEntryToDb = async (entryData: Omit<DiagnosisHistoryEntry, 'id'>): Promise<string> => {
+    try {
+        const docRef = await addDoc(collection(db, DIAGNOSIS_HISTORY_COLLECTION), entryData as any); // 'as any' for serverTimestamp
+        return docRef.id;
+    } catch (error) {
+        console.error("Error saving diagnosis entry: ", error);
+        throw new Error("Failed to save diagnosis entry to database.");
+    }
+}
 
-    const docRef = await addDoc(collection(db, DIAGNOSIS_HISTORY_COLLECTION), docData as any); // Use 'as any' to bypass strict literal type checks for serverTimestamp
-    return docRef.id;
-  } catch (error) {
-    console.error("Error saving diagnosis query: ", error);
-    throw new Error("Failed to save diagnosis query.");
-  }
-};
 
 export const updateDiagnosisHistoryEntry = async (id: string, updates: Partial<DiagnosisHistoryEntry>): Promise<void> => {
   const entryRef = doc(db, DIAGNOSIS_HISTORY_COLLECTION, id);
@@ -169,6 +154,24 @@ export const updateUserByAdmin = async (userId: string, updates: Partial<Pick<Us
     throw new Error(errorMessage);
   }
 };
+
+// Products
+const PRODUCTS_COLLECTION = 'products';
+
+export const getProducts = async (): Promise<Product[]> => {
+    try {
+        const q = query(collection(db, PRODUCTS_COLLECTION), orderBy('name', 'asc'));
+        const querySnapshot = await getDocs(q);
+        const products: Product[] = [];
+        querySnapshot.forEach((doc) => {
+            products.push({ id: doc.id, ...doc.data() } as Product);
+        });
+        return products;
+    } catch (error: any) {
+        console.error("Error fetching products from DB: ", error);
+        throw new Error(`Failed to fetch products. ${error.message || ''}`.trim());
+    }
+}
 
 // Product Categories
 const CATEGORIES_COLLECTION = 'product_categories';

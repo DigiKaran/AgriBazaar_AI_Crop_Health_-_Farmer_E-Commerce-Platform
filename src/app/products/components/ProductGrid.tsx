@@ -3,8 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import type { Product, ProductCategory } from '@/types';
-import { mockProducts } from '@/lib/mock-data';
-import { getProductCategoriesAction } from '@/lib/actions';
+import { getProductCategoriesAction, getProductsAction } from '@/lib/actions';
 import ProductCard from './ProductCard';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,49 +13,56 @@ import { useToast } from '@/hooks/use-toast';
 export default function ProductGrid() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(mockProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Fetch dynamic categories on component mount
-    const fetchCategories = async () => {
-      const result = await getProductCategoriesAction();
-      if (result.categories) {
-        setCategories(result.categories);
+    const fetchInitialData = async () => {
+      setIsLoading(true);
+      const [categoriesResult, productsResult] = await Promise.all([
+        getProductCategoriesAction(),
+        getProductsAction(),
+      ]);
+
+      if (categoriesResult.categories) {
+        setCategories(categoriesResult.categories);
       } else {
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: result.error || 'Could not load product categories.'
+          description: categoriesResult.error || 'Could not load product categories.'
         });
       }
+
+      if (productsResult.products) {
+        setProducts(productsResult.products);
+        setFilteredProducts(productsResult.products);
+      } else {
+         toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: productsResult.error || 'Could not load products.'
+        });
+      }
+
+      setIsLoading(false);
     };
-    fetchCategories();
+    fetchInitialData();
   }, [toast]);
 
   useEffect(() => {
-    setIsLoading(true);
-    // Simulate API call delay for filtering
-    const timer = setTimeout(() => {
-      let products = mockProducts;
-      if (searchTerm) {
-        products = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-      }
-      if (selectedCategory !== 'All') {
-        products = products.filter(p => p.category === selectedCategory);
-      }
-      setFilteredProducts(products);
-      setIsLoading(false);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchTerm, selectedCategory]);
-
-  useEffect(() => {
-    setFilteredProducts(mockProducts);
-    setIsLoading(false);
-  }, []);
+    let productsToFilter = products;
+    if (searchTerm) {
+      productsToFilter = productsToFilter.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+    if (selectedCategory !== 'All') {
+      productsToFilter = productsToFilter.filter(p => p.category === selectedCategory);
+    }
+    setFilteredProducts(productsToFilter);
+  }, [searchTerm, selectedCategory, products]);
 
 
   return (

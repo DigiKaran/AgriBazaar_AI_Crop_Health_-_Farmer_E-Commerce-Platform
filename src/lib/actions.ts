@@ -5,9 +5,9 @@ import { diagnoseCropDisease, type DiagnoseCropDiseaseInput } from '@/ai/flows/d
 import { generatePreventativeMeasures, type GeneratePreventativeMeasuresInput, type GeneratePreventativeMeasuresOutput } from '@/ai/flows/generate-preventative-measures';
 import { getLocalizedFarmingTips, type GetLocalizedFarmingTipsInput, type GetLocalizedFarmingTipsOutput } from '@/ai/flows/get-localized-farming-tips';
 import { agriBotChat } from '@/ai/flows/agri-bot-chat';
-import type { LocalizedFarmingTip, DiagnosisResult, ChatMessage, DiagnosisHistoryEntry, UserProfile, UserRole, ProductCategory, AdminDashboardStats, CartItem, ShippingAddress, AgriBotChatInput, AgriBotChatOutput } from '@/types';
+import type { LocalizedFarmingTip, DiagnosisResult, ChatMessage, DiagnosisHistoryEntry, UserProfile, UserRole, ProductCategory, AdminDashboardStats, CartItem, ShippingAddress, AgriBotChatInput, AgriBotChatOutput, Product } from '@/types';
 import { 
-    saveDiagnosisQueryToDb,
+    saveDiagnosisEntryToDb,
     saveChatMessage as saveMessageToDb,
     updateDiagnosisHistoryEntry,
     getAllUsers as getAllUsersFromDb,
@@ -18,7 +18,9 @@ import {
     deleteProductCategory as deleteProductCategoryFromDb,
     getAllDiagnosisEntries as getAllDiagnosisEntriesFromDb,
     saveOrder as saveOrderToDb,
+    getProducts as getProductsFromDb,
 } from './firebase/firestore';
+import { serverTimestamp } from 'firebase/firestore';
 
 interface DiagnoseCropActionResult {
   diagnosis?: DiagnosisResult;
@@ -35,12 +37,16 @@ export async function diagnoseCropAction(
     
     if (userId && aiResult.diagnosis) {
       try {
-        const historyId = await saveDiagnosisQueryToDb({
+        const entryToSave: Omit<DiagnosisHistoryEntry, 'id' | 'timestamp'> & { timestamp: any } = {
           userId,
           photoDataUri: input.photoDataUri,
           description: input.description,
           diagnosis: aiResult.diagnosis,
-        });
+          timestamp: serverTimestamp(),
+          expertReviewRequested: false,
+          status: 'ai_diagnosed',
+        };
+        const historyId = await saveDiagnosisEntryToDb(entryToSave);
         return { diagnosis: aiResult.diagnosis, historyId };
       } catch (dbError: any) {
         console.error('Error saving diagnosis to DB:', dbError);
@@ -65,11 +71,16 @@ export async function submitDirectExpertQueryAction(
     return { success: false, error: 'User is not authenticated.' };
   }
   try {
-    const historyId = await saveDiagnosisQueryToDb({
+    const entryToSave: Omit<DiagnosisHistoryEntry, 'id' | 'timestamp'> & { timestamp: any } = {
       userId,
       photoDataUri: input.photoDataUri,
       description: input.description,
-    });
+      diagnosis: null,
+      timestamp: serverTimestamp(),
+      expertReviewRequested: true,
+      status: 'pending_expert',
+    };
+    const historyId = await saveDiagnosisEntryToDb(entryToSave);
     return { success: true, historyId };
   } catch (error: any) {
     console.error('Error in submitDirectExpertQueryAction:', error);
@@ -314,6 +325,16 @@ export async function getAdminDashboardStatsAction(adminUserId: string): Promise
 }
 
 // E-commerce Actions
+
+export async function getProductsAction(): Promise<{ products?: Product[]; error?: string }> {
+    try {
+        const products = await getProductsFromDb();
+        return { products };
+    } catch (error: any) {
+        return { error: `Failed to fetch products. ${error.message || ''}`.trim() };
+    }
+}
+
 
 interface PlaceOrderInput {
     userId: string;
