@@ -79,7 +79,7 @@ export interface DiagnosisHistoryEntry {
   expertComments?: string | null;
   expertReviewedBy?: string | null; // UID of the expert/admin who reviewed
   expertReviewedAt?: any; // Firestore serverTimestamp of review
-  status?: 'pending_ai' | 'ai_diagnosed' | 'pending_expert' | 'expert_reviewed' | 'closed';
+  status?: 'ai_diagnosed' | 'pending_expert' | 'expert_reviewed' | 'closed';
 }
 
 export interface ChatMessage {
