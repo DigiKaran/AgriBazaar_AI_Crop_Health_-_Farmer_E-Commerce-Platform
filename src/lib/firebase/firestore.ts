@@ -26,7 +26,7 @@ const serializeDocumentTimestamps = (docData: any): any => {
 const DIAGNOSIS_HISTORY_COLLECTION = 'diagnosis_history';
 
 // A generic function to save any diagnosis entry
-export const saveDiagnosisEntryToDb = async (entryData: Omit<DiagnosisHistoryEntry, 'id'>): Promise<string> => {
+export const saveDiagnosisEntryToDb = async (entryData: Omit<DiagnosisHistoryEntry, 'id' | 'timestamp'>): Promise<string> => {
     try {
         const dataWithTimestamp = {
             ...entryData,
@@ -88,14 +88,13 @@ export const getPendingExpertQueries = async (): Promise<DiagnosisHistoryEntry[]
 
 export const getAllDiagnosisEntries = async (): Promise<DiagnosisHistoryEntry[]> => {
   try {
-    const q = query(collection(db, DIAGNOSIS_HISTORY_COLLECTION));
+    const q = query(collection(db, DIAGNOSIS_HISTORY_COLLECTION), orderBy("timestamp", "desc"));
     const querySnapshot = await getDocs(q);
     const entries: DiagnosisHistoryEntry[] = [];
     querySnapshot.forEach((doc) => {
       entries.push({ id: doc.id, ...serializeDocumentTimestamps(doc.data()) } as DiagnosisHistoryEntry);
     });
-    // Sort in code to avoid composite index requirement
-    return entries.sort((a, b) => new Date(b.timestamp!).getTime() - new Date(a.timestamp!).getTime());
+    return entries;
   } catch (error: any) {
     console.error("Error fetching all diagnosis entries from DB: ", error);
     throw new Error(`Failed to fetch all diagnosis entries. ${error.message || ''}`.trim());
@@ -295,15 +294,14 @@ export const getUserOrders = async (userId: string): Promise<Order[]> => {
     try {
         const q = query(
             collection(db, ORDERS_COLLECTION),
-            where("userId", "==", userId)
+            where("userId", "==", userId),
+            orderBy("createdAt", "desc")
         );
         const querySnapshot = await getDocs(q);
         const orders: Order[] = [];
         querySnapshot.forEach((doc) => {
             orders.push({ id: doc.id, ...serializeDocumentTimestamps(doc.data()) } as Order);
         });
-        // Sort in code to avoid needing a composite index
-        orders.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
         return orders;
     } catch (error) {
         throw new Error(`Failed to fetch user orders. ${(error as Error).message}`);

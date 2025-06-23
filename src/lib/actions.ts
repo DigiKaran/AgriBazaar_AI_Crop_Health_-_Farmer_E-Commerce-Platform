@@ -48,7 +48,6 @@ export async function diagnoseCropAction(
           photoURL: input.photoURL,
           description: input.description,
           diagnosis: aiResult.diagnosis,
-          timestamp: new Date().toISOString(), // Use ISO string for consistency
           expertReviewRequested: false,
           status: 'ai_diagnosed' as const,
         };
@@ -74,14 +73,13 @@ export async function submitDirectExpertQueryAction(
     return { success: false, error: 'User is not authenticated.' };
   }
   try {
-    const entryToSave: Omit<DiagnosisHistoryEntry, 'id' | 'timestamp' > & { timestamp: string } = {
+    const entryToSave = {
       userId,
       photoURL: input.photoURL,
       description: input.description,
       diagnosis: null,
-      timestamp: new Date().toISOString(),
       expertReviewRequested: true,
-      status: 'pending_expert',
+      status: 'pending_expert' as const,
     };
     const historyId = await saveDiagnosisEntryToDb(entryToSave);
     return { success: true, historyId };
@@ -311,8 +309,7 @@ export async function getAdminDashboardStatsAction(adminId: string): Promise<{ s
       { farmer: 0, expert: 0, admin: 0 }
     );
     
-    // Get pending queries by filtering diagnoses in code
-    const pendingQueries = diagnoses.filter(d => d.status === 'pending_expert');
+    const pendingQueries = diagnoses.filter(d => d.status === 'pending_expert' && d.timestamp);
 
     const stats: AdminDashboardStats = {
       totalUsers: users.length,
