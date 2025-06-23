@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, User, Save, AlertTriangle } from 'lucide-react';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { updateUserProfileAction } from '@/lib/actions';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -33,6 +33,9 @@ export default function UpdateProfileForm() {
     defaultValues: {
       displayName: userProfile?.displayName || '',
     },
+    values: { // Use values to keep the form updated when profile loads
+      displayName: userProfile?.displayName || '',
+    }
   });
 
   const onSubmit: SubmitHandler<ProfileFormValues> = async (data) => {
