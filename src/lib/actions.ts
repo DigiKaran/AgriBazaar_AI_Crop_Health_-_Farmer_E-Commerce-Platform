@@ -4,7 +4,7 @@
 import { diagnoseCropDisease, DiagnoseCropDiseaseInput, DiagnoseCropDiseaseOutput } from '@/ai/flows/diagnose-crop-disease';
 import { generatePreventativeMeasures, GeneratePreventativeMeasuresInput, GeneratePreventativeMeasuresOutput } from '@/ai/flows/generate-preventative-measures';
 import { getLocalizedFarmingTips, GetLocalizedFarmingTipsInput, GetLocalizedFarmingTipsOutput } from '@/ai/flows/get-localized-farming-tips';
-import type { LocalizedFarmingTip, DiagnosisResult, ChatMessage, DiagnosisHistoryEntry, UserProfile, UserRole } from '@/types';
+import type { LocalizedFarmingTip, DiagnosisResult, ChatMessage, DiagnosisHistoryEntry, UserProfile, UserRole, ProductCategory } from '@/types';
 import { 
     saveDiagnosisHistory as saveDiagnosisToDb, 
     saveChatMessage as saveMessageToDb,
@@ -12,6 +12,9 @@ import {
     getAllUsers as getAllUsersFromDb,
     updateUserByAdmin as updateUserByAdminInDb,
     getPendingExpertQueries as getPendingExpertQueriesFromDb,
+    getProductCategories as getProductCategoriesFromDb,
+    addProductCategory as addProductCategoryToDb,
+    deleteProductCategory as deleteProductCategoryFromDb,
 } from './firebase/firestore';
 
 interface DiagnoseCropActionResult {
@@ -115,7 +118,8 @@ export async function requestExpertReviewAction(
   }
 }
 
-// Admin Actions
+// Admin & Marketplace Actions
+
 export async function fetchAllUsersAction(adminUserId: string): Promise<{ users?: UserProfile[]; error?: string }> {
   if (!adminUserId) {
     console.error("fetchAllUsersAction: adminUserId is missing.");
@@ -159,9 +163,6 @@ export async function fetchPendingExpertQueriesAction(adminOrExpertUserId: strin
     console.error("fetchPendingExpertQueriesAction: adminOrExpertUserId is missing.");
     return { error: 'User ID is missing. Cannot fetch queries.' };
   }
-  // In a real app, you might add server-side role check here using Firebase Admin SDK
-  // to ensure the user (adminOrExpertUserId) is indeed an admin or expert.
-  // For now, page-level checks are primary.
   try {
     const queries = await getPendingExpertQueriesFromDb();
     return { queries };
@@ -194,11 +195,48 @@ export async function submitExpertDiagnosisAction(
       expertComments: expertComments.trim() || null, // Store null if empty
       expertReviewedBy: reviewerUserId,
       status: 'expert_reviewed',
-      // expertReviewedAt will be set by updateDiagnosisHistoryEntry if status is 'expert_reviewed'
     });
     return { success: true, message: "Expert review submitted successfully." };
   } catch (error: any) {
     console.error("Error submitting expert diagnosis:", error);
     return { error: `Failed to submit expert review. ${error.message || ''}`.trim(), success: false };
   }
+}
+
+export async function getProductCategoriesAction(adminUserId?: string): Promise<{ categories?: ProductCategory[]; error?: string }> {
+    // Admin check is optional here, as we might want to fetch categories for public display
+    // For admin-only actions, the adminUserId check is mandatory.
+    try {
+        const categories = await getProductCategoriesFromDb();
+        return { categories };
+    } catch (error: any) {
+        return { error: `Failed to fetch product categories. ${error.message || ''}`.trim() };
+    }
+}
+
+export async function addProductCategoryAction(adminUserId: string, name: string): Promise<{ category?: ProductCategory; error?: string }> {
+    if (!adminUserId) {
+        return { error: "Admin authentication required." };
+    }
+    if (!name || name.trim().length < 2) {
+        return { error: "Category name must be at least 2 characters long." };
+    }
+    try {
+        const newId = await addProductCategoryToDb(name);
+        return { category: { id: newId, name } };
+    } catch (error: any) {
+        return { error: `Failed to add product category. ${error.message || ''}`.trim() };
+    }
+}
+
+export async function deleteProductCategoryAction(adminUserId: string, id: string): Promise<{ success?: boolean; error?: string }> {
+    if (!adminUserId) {
+        return { error: "Admin authentication required." };
+    }
+    try {
+        await deleteProductCategoryFromDb(id);
+        return { success: true };
+    } catch (error: any) {
+        return { error: `Failed to delete product category. ${error.message || ''}`.trim() };
+    }
 }

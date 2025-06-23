@@ -84,4 +84,6 @@ export const mockProducts: Product[] = [
   }
 ];
 
+// This is now managed in the database. 
+// It is kept here only as a fallback or for initial seeding.
 export const productCategories: string[] = ['All', 'Fertilizers', 'Pesticides', 'Equipment', 'Seeds', 'Herbicides'];

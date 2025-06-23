@@ -1,8 +1,8 @@
 
 
-import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, doc, updateDoc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "./index";
-import type { DiagnosisHistoryEntry, ChatMessage, UserProfile, UserRole } from '@/types';
+import type { DiagnosisHistoryEntry, ChatMessage, UserProfile, UserRole, ProductCategory } from '@/types';
 
 // Diagnosis History
 const DIAGNOSIS_HISTORY_COLLECTION = 'diagnosis_history';
@@ -144,3 +144,40 @@ export const updateUserByAdmin = async (userId: string, updates: Partial<Pick<Us
     throw new Error(errorMessage);
   }
 };
+
+// Product Categories
+const CATEGORIES_COLLECTION = 'product_categories';
+
+export const getProductCategories = async (): Promise<ProductCategory[]> => {
+    try {
+        const q = query(collection(db, CATEGORIES_COLLECTION), orderBy('name', 'asc'));
+        const querySnapshot = await getDocs(q);
+        const categories: ProductCategory[] = [];
+        querySnapshot.forEach((doc) => {
+            categories.push({ id: doc.id, ...doc.data() } as ProductCategory);
+        });
+        return categories;
+    } catch (error: any) {
+        console.error("Error fetching product categories: ", error);
+        throw new Error(`Failed to fetch product categories. ${error.message || ''}`.trim());
+    }
+}
+
+export const addProductCategory = async (name: string): Promise<string> => {
+    try {
+        const docRef = await addDoc(collection(db, CATEGORIES_COLLECTION), { name });
+        return docRef.id;
+    } catch (error: any) {
+        console.error("Error adding product category: ", error);
+        throw new Error(`Failed to add product category. ${error.message || ''}`.trim());
+    }
+}
+
+export const deleteProductCategory = async (id: string): Promise<void> => {
+    try {
+        await deleteDoc(doc(db, CATEGORIES_COLLECTION, id));
+    } catch (error: any) {
+        console.error("Error deleting product category: ", error);
+        throw new Error(`Failed to delete product category. ${error.message || ''}`.trim());
+    }
+}

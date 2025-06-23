@@ -1,21 +1,44 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Product } from '@/types';
-import { mockProducts, productCategories } from '@/lib/mock-data';
+import type { Product, ProductCategory } from '@/types';
+import { mockProducts } from '@/lib/mock-data';
+import { getProductCategoriesAction } from '@/lib/actions';
 import ProductCard from './ProductCard';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ProductGrid() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(mockProducts);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Simulate API call delay
+    // Fetch dynamic categories on component mount
+    const fetchCategories = async () => {
+      const result = await getProductCategoriesAction();
+      if (result.categories) {
+        setCategories(result.categories);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: result.error || 'Could not load product categories.'
+        });
+      }
+    };
+    fetchCategories();
+  }, [toast]);
+
+  useEffect(() => {
+    setIsLoading(true);
+    // Simulate API call delay for filtering
     const timer = setTimeout(() => {
       let products = mockProducts;
       if (searchTerm) {
@@ -26,11 +49,10 @@ export default function ProductGrid() {
       }
       setFilteredProducts(products);
       setIsLoading(false);
-    }, 300); // Short delay for UX
+    }, 300);
     return () => clearTimeout(timer);
   }, [searchTerm, selectedCategory]);
-  
-  // Initial load without delay
+
   useEffect(() => {
     setFilteredProducts(mockProducts);
     setIsLoading(false);
@@ -50,20 +72,21 @@ export default function ProductGrid() {
                 type="text"
                 placeholder="Search by name..."
                 value={searchTerm}
-                onChange={(e) => {setIsLoading(true); setSearchTerm(e.target.value);}}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
           </div>
           <div>
             <label htmlFor="category-filter" className="block text-sm font-medium text-foreground mb-1">Filter by Category</label>
-            <Select value={selectedCategory} onValueChange={(value) => {setIsLoading(true); setSelectedCategory(value);}}>
+            <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value)}>
               <SelectTrigger id="category-filter">
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                {productCategories.map(category => (
-                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                <SelectItem value="All">All Categories</SelectItem>
+                {categories.map(category => (
+                  <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

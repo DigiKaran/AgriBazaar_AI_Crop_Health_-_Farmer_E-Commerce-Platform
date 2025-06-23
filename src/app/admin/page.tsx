@@ -72,15 +72,19 @@ export default function AdminPage() {
         <Card className="shadow-lg rounded-xl">
           <CardHeader>
             <CardTitle className="text-xl flex items-center gap-2"><ShoppingBasket className="h-6 w-6 text-primary"/>Marketplace</CardTitle>
+             <CardDescription>Manage product listings, categories, and marketplace settings.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Button variant="outline" asChild>
+                  <Link href="/admin/marketplace/categories"><Settings className="mr-2 h-5 w-5"/>Manage Categories</Link>
+              </Button>
               <Button variant="outline" disabled><CheckSquare className="mr-2 h-5 w-5"/>Approve Products</Button>
-              <Button variant="outline" disabled><Settings className="mr-2 h-5 w-5"/>Manage Categories</Button>
           </CardContent>
         </Card>
          <Card className="shadow-lg rounded-xl">
           <CardHeader>
             <CardTitle className="text-xl flex items-center gap-2"><BookOpen className="h-6 w-6 text-primary"/>Content & Queries</CardTitle>
+             <CardDescription>Oversee expert interactions and platform content.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Button variant="outline" asChild>
@@ -92,6 +96,7 @@ export default function AdminPage() {
         <Card className="shadow-lg rounded-xl">
           <CardHeader>
             <CardTitle className="text-xl flex items-center gap-2"><BarChart3 className="h-6 w-6 text-primary"/>Analytics</CardTitle>
+            <CardDescription>View reports on user activity and platform performance.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Button variant="outline" disabled><Users className="mr-2 h-5 w-5"/>User Reports</Button>
@@ -101,6 +106,7 @@ export default function AdminPage() {
         <Card className="shadow-lg rounded-xl">
           <CardHeader>
             <CardTitle className="text-xl flex items-center gap-2"><Wrench className="h-6 w-6 text-primary"/>System</CardTitle>
+            <CardDescription>Configure system-wide settings and data.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Button variant="outline" disabled><Database className="mr-2 h-5 w-5"/>Manage Seed Data</Button>
