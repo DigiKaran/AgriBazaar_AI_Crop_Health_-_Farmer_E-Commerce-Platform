@@ -1,14 +1,30 @@
+
+'use client';
+
 import Image from 'next/image';
 import type { Product } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tag, DollarSign, Package } from 'lucide-react';
+import { Tag, DollarSign, Package, ShoppingCart } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const { addToCart } = useCart();
+  const { toast } = useToast();
+
+  const handleAddToCart = () => {
+    addToCart(product);
+    toast({
+      title: "Added to Cart",
+      description: `"${product.name}" has been added to your cart.`,
+    });
+  };
+
   return (
     <Card className="flex flex-col h-full overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1">
       <CardHeader className="p-0">
@@ -45,7 +61,9 @@ export default function ProductCard({ product }: ProductCardProps) {
         <Button 
           className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" 
           disabled={product.stock === 0}
+          onClick={handleAddToCart}
         >
+          <ShoppingCart className="mr-2 h-4 w-4" />
           {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
         </Button>
       </CardFooter>

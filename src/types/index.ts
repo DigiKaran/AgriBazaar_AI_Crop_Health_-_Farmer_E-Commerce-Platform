@@ -1,5 +1,6 @@
 
 
+
 export interface Product {
   id: string;
   name: string;
@@ -9,6 +10,10 @@ export interface Product {
   imageUrl: string;
   description?: string;
   dataAiHint?: string;
+}
+
+export interface CartItem extends Product {
+  quantity: number;
 }
 
 export interface ProductCategory {

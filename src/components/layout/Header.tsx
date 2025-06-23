@@ -3,13 +3,15 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Leaf, Globe, Menu, LogOut, LogIn, UserPlus, UserCog, ShieldAlert, Briefcase } from 'lucide-react';
+import { Leaf, Globe, Menu, LogOut, LogIn, UserPlus, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 const navItems = [
   { href: '/', label: 'Home' },
@@ -54,6 +56,7 @@ const NavLinks = ({ className, itemClassName, onLinkClick, userRole }: { classNa
 
 export default function Header() {
   const { currentUser, userProfile, logout, loading } = useAuth();
+  const { cartCount } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   const handleLogout = async () => {
@@ -101,14 +104,29 @@ export default function Header() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
+  
+  const CartButton = () => (
+     <Button variant="ghost" size="icon" asChild>
+        <Link href="/cart" className="relative">
+          <ShoppingCart className="h-5 w-5" />
+          {cartCount > 0 && (
+            <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 justify-center rounded-full p-0 text-xs">
+              {cartCount}
+            </Badge>
+          )}
+          <span className="sr-only">View Cart</span>
+        </Link>
+      </Button>
+  );
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         <Logo />
         
-        <div className="hidden md:flex items-center space-x-4">
+        <div className="hidden md:flex items-center space-x-2">
           <NavLinks userRole={userProfile?.role} />
+          <CartButton />
           {loading ? null : currentUser ? (
             <UserAvatarButton />
           ) : (
@@ -138,6 +156,7 @@ export default function Header() {
         </div>
 
         <div className="md:hidden flex items-center">
+          <CartButton />
           {loading ? null : currentUser ? (
              <UserAvatarButton />
           ) : (
