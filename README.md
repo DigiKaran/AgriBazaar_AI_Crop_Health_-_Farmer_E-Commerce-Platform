@@ -41,9 +41,29 @@ AgriCheck is a modern web application designed to assist farmers in India by lev
     *   Browse a catalog of agricultural products (seeds, fertilizers, equipment, etc.).
     *   Filter products by category and search by name.
     *   (Note: Cart and checkout functionality are not yet implemented).
-*   **Admin Panel:**
-    *   **User Management:** View all registered users, their roles, and registration dates. Admins can change user roles (e.g., promote a user to 'expert').
-    *   **Expert Query Management:** View and manage diagnosis queries flagged by users for expert assessment. Admins (and Experts) can submit their diagnosis and comments.
+*   **Admin Panel:** A comprehensive dashboard for platform management.
+    *   **User Management:**
+        *   View all registered users, their roles, and registration dates.
+        *   Assign or change user roles (e.g., promote a user to 'expert').
+        *   (Future Scope) Approve expert registrations, and activate, deactivate, or delete user accounts.
+    *   **Expert Query Management:**
+        *   View and manage diagnosis queries flagged by users for expert assessment. Admins (and Experts) can submit their diagnosis and comments.
+    *   **Product & Marketplace Oversight (Future Scope):**
+        *   Review and approve products listed by farmers.
+        *   Manage marketplace categories.
+        *   Flag or remove inappropriate listings.
+    *   **Content & Consultation Control (Future Scope):**
+        *   Approve or remove expert advice, articles, and content.
+        *   Moderate Q&A sections and monitor consultation logs.
+    *   **Reports & Analytics (Future Scope):**
+        *   View dashboards with key metrics on user growth, engagement, and platform usage.
+        *   Generate reports on sales, active users, and trends.
+    *   **Feedback & Complaint Resolution (Future Scope):**
+        *   View and manage user-submitted feedback and resolve issues.
+    *   **Policy & Data Management (Future Scope):**
+        *   Manage curated knowledgebase and seed data (e.g., crop types, soil categories).
+    *   **System Settings (Future Scope):**
+        *   Manage system-wide parameters and third-party integrations.
 *   **Expert Dashboard:** Dedicated section for users with the 'expert' role to review and respond to farmer queries.
 *   **Responsive Design:** UI adaptable to various screen sizes.
 *   **Toast Notifications:** For user feedback on actions.
@@ -196,4 +216,3 @@ Contributions are welcome! Please follow standard coding practices, ensure your 
 ## License
 
 This project is licensed under the MIT License. (Or specify your chosen license).
-
