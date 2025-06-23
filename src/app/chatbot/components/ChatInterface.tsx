@@ -9,9 +9,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, User, Bot, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { saveChatMessageAction } from '@/lib/actions';
+import { saveChatMessageAction, getAgriBotResponseAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import type { ChatMessageHistory } from '@/types';
 
 
 interface Message {
@@ -37,8 +38,6 @@ export default function ChatInterface() {
     } else {
       setSessionId(`guest-${Date.now()}`);
     }
-    // For now, we are not loading chat history. This would be the place to do it.
-    // Example: if (currentUser && sessionId) loadChatHistory(currentUser.uid, sessionId);
   }, [currentUser]);
 
 
@@ -65,13 +64,7 @@ export default function ChatInterface() {
   }, []);
 
   const handleSaveMessage = async (message: Omit<Message, 'id' | 'timestamp'>) => {
-    if (!currentUser) {
-      // Silently fail or show a subtle indicator if user is not logged in.
-      // For now, we won't save messages for guests.
-      return;
-    }
-    if (!sessionId) {
-      console.warn("Chat session ID not available, cannot save message.");
+    if (!currentUser || !sessionId) {
       return;
     }
 
@@ -84,7 +77,6 @@ export default function ChatInterface() {
       });
     } catch (error) {
       console.error("Failed to save chat message:", error);
-      // Optionally show a toast, but might be too noisy for every message.
     }
   };
 
@@ -103,7 +95,7 @@ export default function ChatInterface() {
 
     const userMessageData = {
       text: inputValue,
-      sender: 'user' as 'user',
+      sender: 'user' as const,
     };
     const userMessage: Message = {
       ...userMessageData,
@@ -111,27 +103,45 @@ export default function ChatInterface() {
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     setInputValue('');
     setIsLoading(true);
     
     await handleSaveMessage(userMessageData);
 
-    // Mock bot response - In a real app, this would call your Genkit flow
-    setTimeout(async () => {
-      const botResponseData = {
-         text: `Thank you for your message: "${userMessage.text}". I'm here to assist with queries related to Indian agriculture. For complex issues, please consult a local expert.`,
-         sender: 'bot' as 'bot',
-      };
-      const botResponse: Message = {
-        ...botResponseData,
-        id: (Date.now() + 1).toString(),
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botResponse]);
-      setIsLoading(false);
-      await handleSaveMessage(botResponseData);
-    }, 1500);
+    const chatHistory: ChatMessageHistory[] = newMessages
+      .filter(m => m.sender === 'user' || m.sender === 'bot')
+      .map(m => ({
+        role: m.sender === 'user' ? 'user' : 'model',
+        parts: [{ text: m.text }],
+      }));
+
+    const result = await getAgriBotResponseAction({
+        message: userMessage.text,
+        history: chatHistory.slice(0, -1), // Send history excluding the latest user message
+    });
+
+    let botResponseText = "I'm sorry, I encountered an error. Please try again later.";
+    if ('response' in result) {
+      botResponseText = result.response;
+    } else if ('error' in result) {
+      botResponseText = `Error: ${result.error}`;
+      console.error("AgriBot response error:", result.error);
+    }
+
+    const botResponseData = {
+        text: botResponseText,
+        sender: 'bot' as const,
+    };
+    const botResponse: Message = {
+      ...botResponseData,
+      id: (Date.now() + 1).toString(),
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, botResponse]);
+    setIsLoading(false);
+    await handleSaveMessage(botResponseData);
   };
 
   return (

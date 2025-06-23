@@ -1,0 +1,62 @@
+
+'use server';
+
+/**
+ * @fileOverview A conversational AI agent for AgriCheck, acting as a farming assistant for India.
+ *
+ * - agriBotChat - A function that handles the conversational chat with the AI.
+ * - AgriBotChatInput - The input type for the agriBotChat function.
+ * - AgriBotChatOutput - The return type for the agriBotChat function.
+ */
+
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
+import type { ChatMessageHistory } from '@/types';
+
+export const AgriBotChatInputSchema = z.object({
+  message: z.string().describe('The latest message from the user.'),
+  history: z.array(z.object({
+    role: z.enum(['user', 'model']),
+    parts: z.array(z.object({text: z.string()}))
+  })).describe('The history of the conversation.'),
+});
+export type AgriBotChatInput = z.infer<typeof AgriBotChatInputSchema>;
+
+export const AgriBotChatOutputSchema = z.object({
+  response: z.string().describe('The AI bot\'s response to the user.'),
+});
+export type AgriBotChatOutput = z.infer<typeof AgriBotChatOutputSchema>;
+
+
+export async function agriBotChat(input: AgriBotChatInput): Promise<AgriBotChatOutput> {
+  return agriBotChatFlow(input);
+}
+
+
+const agriBotChatFlow = ai.defineFlow(
+  {
+    name: 'agriBotChatFlow',
+    inputSchema: AgriBotChatInputSchema,
+    outputSchema: AgriBotChatOutputSchema,
+  },
+  async ({ message, history }) => {
+
+    const systemInstruction = `You are AgriBot, a friendly and knowledgeable AI assistant for AgriCheck, a platform dedicated to helping farmers in India. Your expertise is in Indian agriculture.
+- Provide accurate, concise, and practical advice.
+- If a question is outside the scope of farming, politely state that you can only answer agriculture-related queries.
+- Keep responses relatively short and easy to understand for a general audience.
+- You can answer questions about crop diseases, fertilizers, pesticides, seeds, farming equipment, preventative measures, localized tips, and government schemes for farmers in India.
+- Never provide medical or financial advice. For complex issues, always recommend consulting a local agricultural expert or authority.
+- Answer in the same language as the user's message if you can confidently detect it (e.g., Hindi, Marathi), otherwise default to English.`;
+
+    const model = ai.model('googleai/gemini-2.0-flash');
+    const {output} = await ai.generate({
+        model,
+        system: systemInstruction,
+        history: history,
+        prompt: message,
+    });
+
+    return { response: output.text };
+  }
+);

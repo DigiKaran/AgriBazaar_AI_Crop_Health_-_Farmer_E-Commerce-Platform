@@ -84,6 +84,12 @@ export interface ChatMessage {
   timestamp: any; // Firestore serverTimestamp
 }
 
+export interface ChatMessageHistory {
+  role: 'user' | 'model';
+  parts: { text: string }[];
+}
+
+
 export interface AdminDashboardStats {
   totalUsers: number;
   usersByRole: {

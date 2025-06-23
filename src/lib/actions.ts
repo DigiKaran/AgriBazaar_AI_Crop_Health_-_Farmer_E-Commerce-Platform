@@ -4,6 +4,7 @@
 import { diagnoseCropDisease, DiagnoseCropDiseaseInput, DiagnoseCropDiseaseOutput } from '@/ai/flows/diagnose-crop-disease';
 import { generatePreventativeMeasures, GeneratePreventativeMeasuresInput, GeneratePreventativeMeasuresOutput } from '@/ai/flows/generate-preventative-measures';
 import { getLocalizedFarmingTips, GetLocalizedFarmingTipsInput, GetLocalizedFarmingTipsOutput } from '@/ai/flows/get-localized-farming-tips';
+import { agriBotChat, AgriBotChatInput, AgriBotChatOutput } from '@/ai/flows/agri-bot-chat';
 import type { LocalizedFarmingTip, DiagnosisResult, ChatMessage, DiagnosisHistoryEntry, UserProfile, UserRole, ProductCategory, AdminDashboardStats } from '@/types';
 import { 
     saveDiagnosisHistory as saveDiagnosisToDb, 
@@ -85,7 +86,8 @@ export async function saveChatMessageAction(
   message: Omit<ChatMessage, 'id' | 'timestamp'>
 ): Promise<{ messageId?: string; error?: string }> {
   if (!message.userId) {
-    return { error: "User ID is required to save chat message." };
+    // Silently fail for guests, don't return an error to the UI
+    return {};
   }
   try {
     const messageId = await saveMessageToDb(message);
@@ -93,6 +95,18 @@ export async function saveChatMessageAction(
   } catch (error: any) {
     console.error('Error in saveChatMessageAction:', error);
     return { error: `Failed to save chat message. ${error.message || ''}`.trim() };
+  }
+}
+
+export async function getAgriBotResponseAction(
+  input: AgriBotChatInput
+): Promise<AgriBotChatOutput | { error: string }> {
+  try {
+    const result = await agriBotChat(input);
+    return result;
+  } catch (error: any) {
+    console.error('Error in getAgriBotResponseAction:', error);
+    return { error: `Failed to get response from AgriBot. ${error.message || ''}`.trim() };
   }
 }
 
