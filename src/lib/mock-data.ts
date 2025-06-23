@@ -1,7 +1,8 @@
 
-// This file is now deprecated for products, as they are fetched from Firestore.
-// It is kept for reference or for other mock data needs in the future.
+// This file is now deprecated. 
+// Sample data for products and categories is now seeded directly into Firestore for a more realistic development setup.
+// See the `seedDatabase` function in `src/lib/firebase/index.ts`.
 
-// This is now managed in the database via the admin panel. 
-// It is kept here only as a fallback or for initial seeding concepts.
-export const productCategories: string[] = ['All', 'Fertilizers', 'Pesticides', 'Equipment', 'Seeds', 'Herbicides'];
+// The e-commerce products and categories are fetched from the Firestore database.
+// You can manage product categories via the Admin Panel in the app.
+// Products can be added/edited directly in the Firestore console.
