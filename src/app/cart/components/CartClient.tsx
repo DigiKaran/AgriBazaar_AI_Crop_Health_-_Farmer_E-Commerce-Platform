@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -113,7 +112,7 @@ export default function CartClient() {
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>Shipping</span>
-              <span>Calculated at next step</span>
+              <span className="text-primary font-medium">Free</span>
             </div>
             <div className="flex justify-between text-lg font-bold border-t pt-4">
               <span>Total</span>
@@ -121,11 +120,12 @@ export default function CartClient() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full" size="lg" disabled>
-              Proceed to Checkout <ArrowRight className="ml-2 h-5 w-5" />
+            <Button className="w-full" size="lg" asChild disabled={cartItems.length === 0}>
+               <Link href="/checkout">
+                Proceed to Checkout <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
             </Button>
           </CardFooter>
-          <p className="text-xs text-muted-foreground text-center pb-4 px-6">Checkout functionality will be implemented in the next step.</p>
         </Card>
       </div>
     </div>

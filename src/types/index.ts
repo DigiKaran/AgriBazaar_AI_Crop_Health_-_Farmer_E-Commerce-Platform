@@ -1,6 +1,3 @@
-
-
-
 export interface Product {
   id: string;
   name: string;
@@ -110,4 +107,27 @@ export interface AdminDashboardStats {
   totalDiagnoses: number;
   pendingQueries: number;
   totalCategories: number;
+}
+
+export interface ShippingAddress {
+    fullName: string;
+    phone: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state: string;
+    pincode: string;
+}
+
+export interface OrderBase {
+    userId: string;
+    items: CartItem[];
+    totalAmount: number;
+    shippingAddress: ShippingAddress;
+    status: 'placed' | 'shipped' | 'delivered' | 'cancelled';
+}
+
+export interface Order extends OrderBase {
+    id: string; // Firestore Document ID
+    createdAt: any; // Firestore serverTimestamp
 }

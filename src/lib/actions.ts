@@ -1,11 +1,10 @@
-
 'use server';
 
-import { diagnoseCropDisease, DiagnoseCropDiseaseInput, DiagnoseCropDiseaseOutput } from '@/ai/flows/diagnose-crop-disease';
-import { generatePreventativeMeasures, GeneratePreventativeMeasuresInput, GeneratePreventativeMeasuresOutput } from '@/ai/flows/generate-preventative-measures';
-import { getLocalizedFarmingTips, GetLocalizedFarmingTipsInput, GetLocalizedFarmingTipsOutput } from '@/ai/flows/get-localized-farming-tips';
-import { agriBotChat, AgriBotChatInput, AgriBotChatOutput } from '@/ai/flows/agri-bot-chat';
-import type { LocalizedFarmingTip, DiagnosisResult, ChatMessage, DiagnosisHistoryEntry, UserProfile, UserRole, ProductCategory, AdminDashboardStats } from '@/types';
+import { diagnoseCropDisease, type DiagnoseCropDiseaseInput } from '@/ai/flows/diagnose-crop-disease';
+import { generatePreventativeMeasures, type GeneratePreventativeMeasuresInput, type GeneratePreventativeMeasuresOutput } from '@/ai/flows/generate-preventative-measures';
+import { getLocalizedFarmingTips, type GetLocalizedFarmingTipsInput, type GetLocalizedFarmingTipsOutput } from '@/ai/flows/get-localized-farming-tips';
+import { agriBotChat, type AgriBotChatInput, type AgriBotChatOutput } from '@/ai/flows/agri-bot-chat';
+import type { LocalizedFarmingTip, DiagnosisResult, ChatMessage, DiagnosisHistoryEntry, UserProfile, UserRole, ProductCategory, AdminDashboardStats, CartItem, ShippingAddress } from '@/types';
 import { 
     saveDiagnosisHistory as saveDiagnosisToDb, 
     saveChatMessage as saveMessageToDb,
@@ -17,6 +16,7 @@ import {
     addProductCategory as addProductCategoryToDb,
     deleteProductCategory as deleteProductCategoryFromDb,
     getAllDiagnosisEntries as getAllDiagnosisEntriesFromDb,
+    saveOrder as saveOrderToDb,
 } from './firebase/firestore';
 
 interface DiagnoseCropActionResult {
@@ -290,4 +290,40 @@ export async function getAdminDashboardStatsAction(adminUserId: string): Promise
     console.error('Error in getAdminDashboardStatsAction:', error);
     return { error: `Failed to fetch dashboard stats. ${error.message || ''}`.trim() };
   }
+}
+
+// E-commerce Actions
+
+interface PlaceOrderInput {
+    userId: string;
+    items: CartItem[];
+    totalAmount: number;
+    shippingAddress: ShippingAddress;
+}
+
+export async function placeOrderAction(input: PlaceOrderInput): Promise<{ success: boolean; orderId?: string; error?: string }> {
+    if (!input.userId) {
+        return { success: false, error: 'User is not authenticated.' };
+    }
+    if (!input.items || input.items.length === 0) {
+        return { success: false, error: 'Cannot place an order with an empty cart.' };
+    }
+
+    try {
+        const orderId = await saveOrderToDb({
+            ...input,
+            status: 'placed',
+        });
+        
+        // Here you would typically also:
+        // 1. Process payment via a payment gateway
+        // 2. Decrement stock for each product
+        // 3. Send a confirmation email
+        // For this project, we are just saving the order.
+        
+        return { success: true, orderId };
+    } catch (error: any) {
+        console.error('Error in placeOrderAction:', error);
+        return { success: false, error: `Failed to place order. ${error.message || ''}`.trim() };
+    }
 }

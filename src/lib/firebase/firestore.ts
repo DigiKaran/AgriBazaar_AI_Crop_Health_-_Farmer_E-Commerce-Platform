@@ -1,8 +1,6 @@
-
-
 import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, doc, updateDoc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "./index";
-import type { DiagnosisHistoryEntry, ChatMessage, UserProfile, UserRole, ProductCategory } from '@/types';
+import type { DiagnosisHistoryEntry, ChatMessage, UserProfile, UserRole, ProductCategory, Order, OrderBase } from '@/types';
 
 // Diagnosis History
 const DIAGNOSIS_HISTORY_COLLECTION = 'diagnosis_history';
@@ -196,3 +194,19 @@ export const deleteProductCategory = async (id: string): Promise<void> => {
         throw new Error(`Failed to delete product category. ${error.message || ''}`.trim());
     }
 }
+
+// Orders
+const ORDERS_COLLECTION = 'orders';
+
+export const saveOrder = async (orderData: OrderBase): Promise<string> => {
+  try {
+    const docRef = await addDoc(collection(db, ORDERS_COLLECTION), {
+      ...orderData,
+      createdAt: serverTimestamp(),
+    });
+    return docRef.id;
+  } catch (error: any) {
+    console.error("Error saving order: ", error);
+    throw new Error(`Failed to save order. ${error.message || ''}`.trim());
+  }
+};
