@@ -17,6 +17,8 @@ import { diagnoseCropAction, generatePreventativeMeasuresAction, requestExpertRe
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const diagnosisFormSchema = z.object({
   image: z.custom<FileList>((val) => val instanceof FileList && val.length > 0, 'Please upload an image of the crop.'),
@@ -259,8 +261,14 @@ export default function DiagnosisForm() {
                   <h3 className="font-headline text-xl flex items-center gap-2"><CheckCircle2 className="text-green-500"/>Diagnosis</h3>
                   <p><strong>Disease:</strong> {diagnosis.disease}</p>
                   <p><strong>Confidence:</strong> {(diagnosis.confidence * 100).toFixed(0)}%</p>
-                  <p><strong>Treatment Recommendations:</strong></p>
-                  <p className="whitespace-pre-wrap text-sm">{diagnosis.treatmentRecommendations}</p>
+                  <div>
+                    <strong>Treatment Recommendations:</strong>
+                    <div className="chat-prose mt-1">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {diagnosis.treatmentRecommendations}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
                   
                   {diagnosis.historyId && currentUser && (
                     <div className="mt-4 pt-4 border-t">
