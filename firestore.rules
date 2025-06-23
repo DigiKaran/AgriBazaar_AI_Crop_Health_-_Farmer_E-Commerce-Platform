@@ -3,21 +3,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to check if a user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    // Helper function to check if the user is the owner of the document
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // --- Rules for any collection ---
-    // This is a broad rule for debugging. It allows any authenticated user
-    // to perform read and write operations. This will stop permission errors.
-    match /{collection}/{docId} {
-      allow read, write: if isAuthenticated();
+    // --- Default rule for a development/project environment ---
+    // This allows any authenticated (logged-in) user to perform read and write operations.
+    // This is NOT secure for a production app but is perfect for a college project
+    // where functionality is prioritized over granular security.
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }
