@@ -41,6 +41,7 @@ const prompt = ai.definePrompt({
   name: 'diagnoseCropDiseasePrompt',
   input: {schema: DiagnoseCropDiseaseInputSchema},
   output: {schema: DiagnoseCropDiseaseOutputSchema},
+  model: 'googleai/gemini-1.5-flash-latest', // Use a more stable model
   prompt: `You are a highly accurate expert agricultural botanist specializing in diagnosing crop diseases common in India, with a target accuracy of 90% or higher. Analyze the following information and provide a precise diagnosis.
 Your diagnosis should include the disease name, your confidence level (a number between 0 and 1), and detailed treatment recommendations suitable for Indian farming conditions.
 Consider common Indian crops like rice, wheat, cotton, sugarcane, pulses, etc.
