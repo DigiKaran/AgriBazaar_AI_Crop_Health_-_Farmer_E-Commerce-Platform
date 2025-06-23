@@ -25,10 +25,8 @@ import {
     deleteProduct as deleteProductFromDb,
     getPendingOrders as getPendingOrdersFromDb,
     updateOrderStatus as updateOrderStatusInDb,
+    updateUserInDb,
 } from './firebase/firestore';
-import { updateUserProfileInfo as updateUserProfileInfoInAuth } from './firebase/auth';
-import { serverTimestamp } from 'firebase/firestore';
-
 
 interface DiagnoseCropActionResult {
   diagnosis?: DiagnosisResult;
@@ -50,7 +48,7 @@ export async function diagnoseCropAction(
           photoURL: input.photoURL,
           description: input.description,
           diagnosis: aiResult.diagnosis,
-          timestamp: serverTimestamp(),
+          timestamp: new Date().toISOString(), // Use ISO string for consistency
           expertReviewRequested: false,
           status: 'ai_diagnosed' as const,
         };
@@ -76,12 +74,12 @@ export async function submitDirectExpertQueryAction(
     return { success: false, error: 'User is not authenticated.' };
   }
   try {
-    const entryToSave: Omit<DiagnosisHistoryEntry, 'id' | 'timestamp'> & { timestamp: any } = {
+    const entryToSave: Omit<DiagnosisHistoryEntry, 'id' | 'timestamp' > & { timestamp: string } = {
       userId,
       photoURL: input.photoURL,
       description: input.description,
       diagnosis: null,
-      timestamp: serverTimestamp(),
+      timestamp: new Date().toISOString(),
       expertReviewRequested: true,
       status: 'pending_expert',
     };
@@ -176,7 +174,7 @@ export async function updateUserProfileAction(
   displayName: string
 ): Promise<{ success: boolean; error?: string }> {
     try {
-        await updateUserProfileInfoInAuth(userId, { displayName });
+        await updateUserInDb(userId, { displayName });
         return { success: true };
     } catch (error: any) {
         return { success: false, error: `Failed to update profile. ${error.message || ''}`.trim() };
@@ -211,9 +209,9 @@ export async function fetchAllUsersAction(adminId: string): Promise<{ users?: Us
 }
 
 export async function updateUserByAdminAction(
-  adminId: string,
   targetUserId: string, 
-  updates: { role: UserRole; status: 'active' | 'inactive' }
+  updates: { role: UserRole; status: 'active' | 'inactive' },
+  adminId: string,
 ): Promise<{ success?: boolean; error?: string }> {
     try {
       await updateUserByAdminInDb(targetUserId, updates);
@@ -225,7 +223,7 @@ export async function updateUserByAdminAction(
     }
 }
 
-export async function fetchPendingExpertQueriesAction(adminId: string): Promise<{ queries?: DiagnosisHistoryEntry[]; error?: string }> {
+export async function fetchPendingExpertQueriesAction(): Promise<{ queries?: DiagnosisHistoryEntry[]; error?: string }> {
   try {
     const queries = await getPendingExpertQueriesFromDb();
     return { queries };
@@ -258,6 +256,7 @@ export async function submitExpertDiagnosisAction(
       expertComments: expertComments.trim() || null, // Store null if empty
       expertReviewedBy: reviewerUserId,
       status: 'expert_reviewed',
+      expertReviewedAt: new Date().toISOString()
     });
     return { success: true, message: "Expert review submitted successfully." };
   } catch (error: any) {
@@ -266,7 +265,7 @@ export async function submitExpertDiagnosisAction(
   }
 }
 
-export async function getProductCategoriesAction(adminId: string): Promise<{ categories?: ProductCategory[]; error?: string }> {
+export async function getProductCategoriesAction(adminId?: string): Promise<{ categories?: ProductCategory[]; error?: string }> {
     try {
         const categories = await getProductCategoriesFromDb();
         return { categories };
@@ -298,10 +297,9 @@ export async function deleteProductCategoryAction(adminId: string, id: string): 
 
 export async function getAdminDashboardStatsAction(adminId: string): Promise<{ stats?: AdminDashboardStats; error?: string }> {
   try {
-    const [users, diagnoses, pendingQueries, categories] = await Promise.all([
+    const [users, diagnoses, categories] = await Promise.all([
       getAllUsersFromDb(),
       getAllDiagnosisEntriesFromDb(),
-      getPendingExpertQueriesFromDb(),
       getProductCategoriesFromDb(),
     ]);
 
@@ -312,6 +310,9 @@ export async function getAdminDashboardStatsAction(adminId: string): Promise<{ s
       },
       { farmer: 0, expert: 0, admin: 0 }
     );
+    
+    // Get pending queries by filtering diagnoses in code
+    const pendingQueries = diagnoses.filter(d => d.status === 'pending_expert');
 
     const stats: AdminDashboardStats = {
       totalUsers: users.length,
@@ -328,7 +329,7 @@ export async function getAdminDashboardStatsAction(adminId: string): Promise<{ s
   }
 }
 
-export async function getProductsAction(adminId: string): Promise<{ products?: Product[]; error?: string }> {
+export async function getProductsAction(adminId?: string): Promise<{ products?: Product[]; error?: string }> {
     try {
         const products = await getProductsFromDb();
         return { products };

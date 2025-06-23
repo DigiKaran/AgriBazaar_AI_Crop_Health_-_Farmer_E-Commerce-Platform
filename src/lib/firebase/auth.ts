@@ -54,7 +54,7 @@ export const createUserProfileDocument = async (user: FirebaseUser) => {
 
   if (!snapshot.exists()) {
     const { email, displayName, uid, photoURL } = user;
-    const createdAt = serverTimestamp();
+    const createdAt = new Date().toISOString();
     
     // Check if this is the first user to make them an admin
     const usersCollectionRef = collection(db, 'users');
@@ -104,23 +104,8 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
   if (snapshot.exists()) {
     const data = snapshot.data();
     // Convert Firestore Timestamp to ISO string for client-side compatibility
-    const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null;
+    const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt;
     return { ...data, uid, createdAt } as UserProfile;
   }
   return null;
-};
-
-// Function to update user profile info in both Auth and Firestore
-export const updateUserProfileInfo = async (userId: string, updates: { displayName?: string; photoURL?: string }) => {
-    const user = auth.currentUser;
-    if (!user || user.uid !== userId) {
-        throw new Error("User not authenticated or mismatched ID.");
-    }
-
-    // Update Firebase Authentication profile
-    await updateProfile(user, updates);
-
-    // Update Firestore user document
-    const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, updates);
 };
