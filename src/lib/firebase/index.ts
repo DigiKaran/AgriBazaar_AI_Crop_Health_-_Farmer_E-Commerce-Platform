@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore, enableIndexedDbPersistence, CACHE_SIZE_UNLIMITED, doc, getDoc, writeBatch, collection } from "firebase/firestore";
@@ -108,34 +107,33 @@ const seedDatabase = async () => {
     }
 };
 
-
-// Attempt to enable offline persistence
-try {
-  enableIndexedDbPersistence(db, { cacheSizeBytes: CACHE_SIZE_UNLIMITED })
-    .then(() => {
-      console.log("Firestore offline persistence enabled.");
-      // Run initialization logic after persistence is set up
-      ensureCollectionsExist();
-      seedDatabase();
-    })
-    .catch((err) => {
+// Client-side initialization logic
+if (typeof window !== 'undefined') {
+  const initializeClient = async () => {
+    try {
+      await enableIndexedDbPersistence(db, {cacheSizeBytes: CACHE_SIZE_UNLIMITED});
+      console.log('Firestore offline persistence enabled.');
+    } catch (err: any) {
       if (err.code === 'failed-precondition') {
-        // This is a normal scenario in a multi-tab environment.
-        // Don't log a warning, just proceed.
+        // Multiple tabs open, persistence can only be enabled in one.
+        // This is a normal scenario.
       } else if (err.code === 'unimplemented') {
-        console.warn("Firestore offline persistence failed: Browser does not support all of the features required. Data will be fetched online.");
+        // The current browser does not support all of the
+        // features required to enable persistence
+        console.warn('Firestore offline persistence not supported in this browser.');
       } else {
-        console.error("Firestore offline persistence failed with error: ", err);
+        console.error('Error enabling Firestore offline persistence:', err);
       }
-       // Still run initialization logic even if persistence fails
-      ensureCollectionsExist();
-      seedDatabase();
-    });
-} catch (error) {
-    console.error("Error enabling Firestore offline persistence:", error);
-    // Still run initialization logic if enabling persistence throws an error
-    ensureCollectionsExist();
-    seedDatabase();
+    }
+    
+    // These functions create placeholder documents and seed sample data
+    // to ensure the app works correctly on first run.
+    // They have built-in checks to prevent running more than once.
+    await ensureCollectionsExist();
+    await seedDatabase();
+  };
+
+  initializeClient();
 }
 
 export { app, auth, db, storage };
