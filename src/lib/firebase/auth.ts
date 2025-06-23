@@ -9,7 +9,7 @@ import {
   signInWithPopup
 } from "firebase/auth";
 import { auth, db } from "./index";
-import { doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, getDoc, collection, query, getDocs, limit } from "firebase/firestore";
 import type { UserProfile } from '@/types';
 
 export const signUpWithEmailPassword = async (email: string, password: string): Promise<UserCredential> => {
@@ -51,17 +51,25 @@ export const createUserProfileDocument = async (user: FirebaseUser, additionalDa
   const snapshot = await getDoc(userRef);
 
   if (!snapshot.exists()) {
-    const { email, displayName, uid, photoURL } = user; // Added photoURL
+    const { email, displayName, uid, photoURL } = user;
     const createdAt = serverTimestamp();
+    
+    // Check if this is the first user to make them an admin
+    const usersCollectionRef = collection(db, 'users');
+    const q = query(usersCollectionRef, limit(1));
+    const existingUsersSnapshot = await getDocs(q);
+    const isFirstUser = existingUsersSnapshot.empty;
+    const role = isFirstUser ? 'admin' : 'farmer';
+
     try {
       await setDoc(userRef, {
         uid,
         email,
         displayName: displayName || email?.split('@')[0] || 'User',
-        photoURL: photoURL || null, // Save photoURL from Google
+        photoURL: photoURL || null,
         createdAt,
-        role: 'farmer', // Default role for new profiles
-        status: 'active', // Default status for new profiles
+        role, // Use the determined role
+        status: 'active',
         ...additionalData,
       });
     } catch (error) {
