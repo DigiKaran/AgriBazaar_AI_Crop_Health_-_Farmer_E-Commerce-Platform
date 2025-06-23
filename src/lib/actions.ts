@@ -4,7 +4,7 @@
 import { diagnoseCropDisease, DiagnoseCropDiseaseInput, DiagnoseCropDiseaseOutput } from '@/ai/flows/diagnose-crop-disease';
 import { generatePreventativeMeasures, GeneratePreventativeMeasuresInput, GeneratePreventativeMeasuresOutput } from '@/ai/flows/generate-preventative-measures';
 import { getLocalizedFarmingTips, GetLocalizedFarmingTipsInput, GetLocalizedFarmingTipsOutput } from '@/ai/flows/get-localized-farming-tips';
-import type { LocalizedFarmingTip, DiagnosisResult, ChatMessage, DiagnosisHistoryEntry, UserProfile, UserRole, ProductCategory } from '@/types';
+import type { LocalizedFarmingTip, DiagnosisResult, ChatMessage, DiagnosisHistoryEntry, UserProfile, UserRole, ProductCategory, AdminDashboardStats } from '@/types';
 import { 
     saveDiagnosisHistory as saveDiagnosisToDb, 
     saveChatMessage as saveMessageToDb,
@@ -15,6 +15,7 @@ import {
     getProductCategories as getProductCategoriesFromDb,
     addProductCategory as addProductCategoryToDb,
     deleteProductCategory as deleteProductCategoryFromDb,
+    getAllDiagnosisEntries as getAllDiagnosisEntriesFromDb,
 } from './firebase/firestore';
 
 interface DiagnoseCropActionResult {
@@ -239,4 +240,40 @@ export async function deleteProductCategoryAction(adminUserId: string, id: strin
     } catch (error: any) {
         return { error: `Failed to delete product category. ${error.message || ''}`.trim() };
     }
+}
+
+export async function getAdminDashboardStatsAction(adminUserId: string): Promise<{ stats?: AdminDashboardStats; error?: string }> {
+  if (!adminUserId) {
+    return { error: 'Admin user ID is missing. Cannot fetch stats.' };
+  }
+  // Note: Firestore security rules are the primary enforcement for admin-only access.
+  try {
+    const [users, diagnoses, pendingQueries, categories] = await Promise.all([
+      getAllUsersFromDb(),
+      getAllDiagnosisEntriesFromDb(),
+      getPendingExpertQueriesFromDb(),
+      getProductCategoriesFromDb(),
+    ]);
+
+    const usersByRole = users.reduce(
+      (acc, user) => {
+        acc[user.role] = (acc[user.role] || 0) + 1;
+        return acc;
+      },
+      { farmer: 0, expert: 0, admin: 0 }
+    );
+
+    const stats: AdminDashboardStats = {
+      totalUsers: users.length,
+      usersByRole,
+      totalDiagnoses: diagnoses.length,
+      pendingQueries: pendingQueries.length,
+      totalCategories: categories.length,
+    };
+
+    return { stats };
+  } catch (error: any) {
+    console.error('Error in getAdminDashboardStatsAction:', error);
+    return { error: `Failed to fetch dashboard stats. ${error.message || ''}`.trim() };
+  }
 }

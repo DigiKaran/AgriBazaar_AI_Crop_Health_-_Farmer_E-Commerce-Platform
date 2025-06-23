@@ -11,6 +11,11 @@ export interface Product {
   dataAiHint?: string;
 }
 
+export interface ProductCategory {
+  id: string;
+  name: string;
+}
+
 export interface DiagnosisResult {
   disease: string;
   confidence: number;
@@ -77,4 +82,16 @@ export interface ChatMessage {
   sender: 'user' | 'bot';
   text: string;
   timestamp: any; // Firestore serverTimestamp
+}
+
+export interface AdminDashboardStats {
+  totalUsers: number;
+  usersByRole: {
+    farmer: number;
+    expert: number;
+    admin: number;
+  };
+  totalDiagnoses: number;
+  pendingQueries: number;
+  totalCategories: number;
 }

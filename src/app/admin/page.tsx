@@ -9,10 +9,11 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { 
     ShieldAlert, LayoutDashboard, Users, MessageSquare, Settings, 
-    BarChart3, FileText, CheckSquare, ShoppingBasket, BookOpen, 
-    BadgePercent, Wrench, Shield, Database, Megaphone 
+    FileText, CheckSquare, ShoppingBasket, BookOpen, 
+    Wrench, Database, Megaphone 
 } from 'lucide-react';
 import UserManagementTable from './components/UserManagementTable';
+import AdminStatsCards from './components/AdminStatsCards';
 
 export default function AdminPage() {
   const { userProfile, loading, currentUser } = useAuth();
@@ -55,9 +56,11 @@ export default function AdminPage() {
         <h1 className="text-4xl font-headline flex items-center gap-3">
             <LayoutDashboard className="h-10 w-10 text-primary"/> Admin Dashboard
         </h1>
-        <p className="text-muted-foreground mt-2">Manage users, roles, products, content, and system settings.</p>
+        <p className="text-muted-foreground mt-2">Platform overview, user management, and system settings.</p>
       </header>
       
+      {currentUser && <AdminStatsCards adminUserId={currentUser.uid} />}
+
       <Card className="shadow-lg rounded-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Users className="h-6 w-6 text-primary"/>User Management</CardTitle>
@@ -91,16 +94,6 @@ export default function AdminPage() {
                 <Link href="/admin/expert-queries"><MessageSquare className="mr-2 h-5 w-5"/>Expert Queries</Link>
               </Button>
               <Button variant="outline" disabled><FileText className="mr-2 h-5 w-5"/>Manage Articles</Button>
-          </CardContent>
-        </Card>
-        <Card className="shadow-lg rounded-xl">
-          <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2"><BarChart3 className="h-6 w-6 text-primary"/>Analytics</CardTitle>
-            <CardDescription>View reports on user activity and platform performance.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Button variant="outline" disabled><Users className="mr-2 h-5 w-5"/>User Reports</Button>
-              <Button variant="outline" disabled><ShoppingBasket className="mr-2 h-5 w-5"/>Sales Trends</Button>
           </CardContent>
         </Card>
         <Card className="shadow-lg rounded-xl">

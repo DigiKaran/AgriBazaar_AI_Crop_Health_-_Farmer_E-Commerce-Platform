@@ -68,6 +68,21 @@ export const getPendingExpertQueries = async (): Promise<DiagnosisHistoryEntry[]
   }
 };
 
+export const getAllDiagnosisEntries = async (): Promise<DiagnosisHistoryEntry[]> => {
+  try {
+    const q = query(collection(db, DIAGNOSIS_HISTORY_COLLECTION), orderBy("timestamp", "desc"));
+    const querySnapshot = await getDocs(q);
+    const entries: DiagnosisHistoryEntry[] = [];
+    querySnapshot.forEach((doc) => {
+      entries.push({ id: doc.id, ...doc.data() } as DiagnosisHistoryEntry);
+    });
+    return entries;
+  } catch (error: any) {
+    console.error("Error fetching all diagnosis entries from DB: ", error);
+    throw new Error(`Failed to fetch all diagnosis entries. ${error.message || ''}`.trim());
+  }
+};
+
 
 // Chat Messages
 const CHAT_MESSAGES_COLLECTION = 'chat_messages';
