@@ -19,9 +19,9 @@ const serializeDocumentTimestamps = (docData: any) => {
 const DIAGNOSIS_HISTORY_COLLECTION = 'diagnosis_history';
 
 // A generic function to save any diagnosis entry
-export const saveDiagnosisEntryToDb = async (entryData: Omit<DiagnosisHistoryEntry, 'id'>): Promise<string> => {
+export const saveDiagnosisEntryToDb = async (entryData: Omit<DiagnosisHistoryEntry, 'id' | 'timestamp'> & { timestamp: any }): Promise<string> => {
     try {
-        const docRef = await addDoc(collection(db, DIAGNOSIS_HISTORY_COLLECTION), entryData as any); // 'as any' for serverTimestamp
+        const docRef = await addDoc(collection(db, DIAGNOSIS_HISTORY_COLLECTION), entryData);
         return docRef.id;
     } catch (error) {
         console.error("Error saving diagnosis entry: ", error);
@@ -30,14 +30,14 @@ export const saveDiagnosisEntryToDb = async (entryData: Omit<DiagnosisHistoryEnt
 }
 
 
-export const updateDiagnosisHistoryEntry = async (id: string, updates: Partial<DiagnosisHistoryEntry>): Promise<void> => {
+export const updateDiagnosisHistoryEntry = async (id: string, updates: { [key: string]: any }): Promise<void> => {
   const entryRef = doc(db, DIAGNOSIS_HISTORY_COLLECTION, id);
   try {
     // If status is being updated to 'expert_reviewed', also set expertReviewedAt
     if (updates.status === 'expert_reviewed' && !updates.expertReviewedAt) {
-        (updates as any).expertReviewedAt = serverTimestamp();
+        updates.expertReviewedAt = serverTimestamp();
     }
-    await updateDoc(entryRef, updates as any); // Use 'as any' for serverTimestamp
+    await updateDoc(entryRef, updates);
   } catch (error) {
     console.error("Error updating diagnosis history entry: ", error);
     throw new Error("Failed to update diagnosis history.");
@@ -65,6 +65,7 @@ export const getPendingExpertQueries = async (): Promise<DiagnosisHistoryEntry[]
       queries.push({ id: doc.id, ...serializeDocumentTimestamps(doc.data()) } as DiagnosisHistoryEntry);
     });
 
+    // Sort client-side to avoid needing a composite index
     queries.sort((a, b) => {
         const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
         const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
