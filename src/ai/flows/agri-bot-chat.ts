@@ -20,12 +20,12 @@ const AgriBotChatInputSchema = z.object({
     parts: z.array(z.object({text: z.string()}))
   })).describe('The history of the conversation.'),
 });
-export type AgriBotChatInput = z.infer<typeof AgriBotChatInputSchema>;
+type AgriBotChatInput = z.infer<typeof AgriBotChatInputSchema>;
 
 const AgriBotChatOutputSchema = z.object({
   response: z.string().describe('The AI bot\'s response to the user.'),
 });
-export type AgriBotChatOutput = z.infer<typeof AgriBotChatOutputSchema>;
+type AgriBotChatOutput = z.infer<typeof AgriBotChatOutputSchema>;
 
 
 export async function agriBotChat(input: AgriBotChatInput): Promise<AgriBotChatOutput> {
@@ -49,12 +49,12 @@ const agriBotChatFlow = ai.defineFlow(
 - Never provide medical or financial advice. For complex issues, always recommend consulting a local agricultural expert or authority.
 - Answer in the same language as the user's message if you can confidently detect it (e.g., Hindi, Marathi), otherwise default to English.`;
 
-    const {output} = await ai.generate({
+    const { text } = await ai.generate({
         system: systemInstruction,
         history: history,
         prompt: message,
     });
 
-    return { response: output.text };
+    return { response: text };
   }
 );
