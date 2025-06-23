@@ -13,7 +13,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import type { ChatMessageHistory } from '@/types';
 
-export const AgriBotChatInputSchema = z.object({
+const AgriBotChatInputSchema = z.object({
   message: z.string().describe('The latest message from the user.'),
   history: z.array(z.object({
     role: z.enum(['user', 'model']),
@@ -22,7 +22,7 @@ export const AgriBotChatInputSchema = z.object({
 });
 export type AgriBotChatInput = z.infer<typeof AgriBotChatInputSchema>;
 
-export const AgriBotChatOutputSchema = z.object({
+const AgriBotChatOutputSchema = z.object({
   response: z.string().describe('The AI bot\'s response to the user.'),
 });
 export type AgriBotChatOutput = z.infer<typeof AgriBotChatOutputSchema>;
