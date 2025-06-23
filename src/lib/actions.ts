@@ -30,35 +30,20 @@ import {
 
 interface DiagnoseCropActionResult {
   diagnosis?: DiagnosisResult;
-  historyId?: string;
   error?: string;
 }
 
+// This action is now simplified to only perform AI diagnosis without saving to DB.
 export async function diagnoseCropAction(
-  input: DiagnoseCropDiseaseInput & { photoURL: string },
-  userId: string
+  input: DiagnoseCropDiseaseInput
 ): Promise<DiagnoseCropActionResult> {
   try {
     const aiResult = await diagnoseCropDisease(input);
     
     if (aiResult.diagnosis) {
-      try {
-        const entryToSave = {
-          userId,
-          photoURL: input.photoURL,
-          description: input.description,
-          diagnosis: aiResult.diagnosis,
-          expertReviewRequested: false,
-          status: 'ai_diagnosed' as const,
-        };
-        const historyId = await saveDiagnosisEntryToDb(entryToSave);
-        return { diagnosis: aiResult.diagnosis, historyId };
-      } catch (dbError: any) {
-        console.error('Error saving diagnosis to DB:', dbError);
-        return { diagnosis: aiResult.diagnosis, error: `Diagnosis successful, but failed to save history. ${dbError.message || ''}`.trim() };
-      }
+      return { diagnosis: aiResult.diagnosis };
     }
-    return { error: 'Unknown error from AI diagnosis' };
+    return { error: 'Unknown error from AI diagnosis. The model may have returned an unexpected format.' };
   } catch (error: any) {
     console.error('Error in diagnoseCropAction:', error);
     return { error: `Failed to diagnose crop. ${error.message || ''}`.trim() };

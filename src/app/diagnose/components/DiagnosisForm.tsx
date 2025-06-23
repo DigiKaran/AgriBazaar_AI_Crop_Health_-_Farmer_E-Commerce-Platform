@@ -11,15 +11,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, UploadCloud, AlertTriangle, CheckCircle2, Brain, ShieldCheck, UserCheck, MessageSquareWarning } from 'lucide-react';
+import { Loader2, UploadCloud, AlertTriangle, CheckCircle2, Brain, ShieldCheck } from 'lucide-react';
 import type { DiagnosisResult, PreventativeMeasuresResult } from '@/types';
-import { diagnoseCropAction, generatePreventativeMeasuresAction, requestExpertReviewAction } from '@/lib/actions';
+import { diagnoseCropAction, generatePreventativeMeasuresAction } from '@/lib/actions';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { uploadImageForDiagnosis } from '@/lib/firebase/storage';
+
 
 const diagnosisFormSchema = z.object({
   image: z.custom<FileList>((val) => val instanceof FileList && val.length > 0, 'Please upload an image of the crop.'),
@@ -31,10 +31,8 @@ const diagnosisFormSchema = z.object({
 
 type DiagnosisFormValues = z.infer<typeof diagnosisFormSchema>;
 
-interface DiagnosisState extends DiagnosisResult {
-  historyId?: string;
-  expertReviewRequested?: boolean;
-}
+// This state now only holds the direct result from the AI
+interface DiagnosisState extends DiagnosisResult {}
 
 const fileToDataUri = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -50,7 +48,6 @@ export default function DiagnosisForm() {
   const [preventativeMeasures, setPreventativeMeasures] = useState<PreventativeMeasuresResult | null>(null);
   const [isLoadingDiagnosis, setIsLoadingDiagnosis] = useState(false);
   const [isLoadingPreventative, setIsLoadingPreventative] = useState(false);
-  const [isRequestingExpert, setIsRequestingExpert] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const { currentUser } = useAuth();
@@ -93,41 +90,27 @@ export default function DiagnosisForm() {
     }
 
     if (!currentUser) {
-      setError('You must be logged in to diagnose a crop.');
-      setIsLoadingDiagnosis(false);
-      toast({
-        variant: "destructive",
-        title: "Authentication Required",
-        description: "Please log in to use the diagnosis feature.",
-      });
-      return;
+        toast({
+            variant: "destructive",
+            title: "Login Recommended",
+            description: "Please log in to save diagnosis results to your history.",
+        });
     }
 
     try {
       const file = data.image[0];
-      const [photoDataUri, photoURL] = await Promise.all([
-        fileToDataUri(file),
-        uploadImageForDiagnosis(file, currentUser.uid)
-      ]);
+      const photoDataUri = await fileToDataUri(file);
       
-      const result = await diagnoseCropAction({ photoDataUri, photoURL, description: data.description }, currentUser.uid);
+      const result = await diagnoseCropAction({ photoDataUri, description: data.description });
 
       if (result.error) {
         setError(result.error);
-        if (result.diagnosis) { 
-            setDiagnosis({...result.diagnosis, historyId: result.historyId});
-             toast({
-                variant: "destructive",
-                title: "Diagnosis Complete (Save Failed)",
-                description: "Crop diagnosed, but failed to save to your history.",
-            });
-        }
       } else if (result.diagnosis) {
-        setDiagnosis({...result.diagnosis, historyId: result.historyId, expertReviewRequested: false });
+        setDiagnosis(result.diagnosis);
         toast({
             title: "Diagnosis Successful",
-            description: `Identified: ${result.diagnosis.disease}. History saved.`,
-            action: result.historyId ? <CheckCircle2 className="text-green-500" /> : undefined,
+            description: `Identified: ${result.diagnosis.disease}. This result is not saved to history.`,
+            action: <CheckCircle2 className="text-green-500" />,
         });
         if (result.diagnosis.disease && !result.diagnosis.disease.toLowerCase().includes("unknown")) {
              form.setValue('cropType', result.diagnosis.disease.split(' ')[0] || data.cropType || "General Crop");
@@ -170,34 +153,13 @@ export default function DiagnosisForm() {
     }
   };
 
-  const handleRequestExpertReview = async () => {
-    if (!diagnosis?.historyId || !currentUser?.uid) {
-        toast({ variant: "destructive", title: "Error", description: "Cannot request review without a saved diagnosis or user session." });
-        return;
-    }
-    setIsRequestingExpert(true);
-    try {
-        const result = await requestExpertReviewAction(diagnosis.historyId, currentUser.uid);
-        if (result.success) {
-            toast({ title: "Success", description: result.message });
-            setDiagnosis(prev => prev ? {...prev, expertReviewRequested: true} : null);
-        } else {
-            toast({ variant: "destructive", title: "Failed", description: result.error });
-        }
-    } catch (err) {
-        toast({ variant: "destructive", title: "Error", description: "Could not request expert review." });
-    } finally {
-        setIsRequestingExpert(false);
-    }
-  };
-
   return (
     <Form {...form}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
         <Card className="shadow-xl rounded-xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-2xl"><UploadCloud className="text-primary" /> Upload Crop Image</CardTitle>
-            <CardDescription>Provide an image and description of the affected crop. Login required.</CardDescription>
+            <CardDescription>Provide an image and description of the affected crop to get an instant AI analysis.</CardDescription>
           </CardHeader>
           <form onSubmit={form.handleSubmit(onSubmitDiagnosis)} className="space-y-6">
             <CardContent className="space-y-6">
@@ -213,7 +175,7 @@ export default function DiagnosisForm() {
                         accept="image/*"
                         onChange={handleImageChange}
                         className="file:text-sm file:font-medium file:bg-primary/10 file:text-primary file:border-0 file:rounded-md file:px-3 file:py-1.5 hover:file:bg-primary/20"
-                        disabled={!currentUser || isLoadingDiagnosis}
+                        disabled={isLoadingDiagnosis}
                       />
                     </FormControl>
                     <FormMessage />
@@ -232,7 +194,7 @@ export default function DiagnosisForm() {
                   <FormItem>
                     <FormLabel>Description of Symptoms</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="e.g., Yellow spots on leaves, wilting, etc." {...field} rows={4} disabled={!currentUser || isLoadingDiagnosis} />
+                      <Textarea placeholder="e.g., Yellow spots on leaves, wilting, etc." {...field} rows={4} disabled={isLoadingDiagnosis} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -240,7 +202,7 @@ export default function DiagnosisForm() {
               />
             </CardContent>
             <CardFooter>
-              <Button type="submit" disabled={!currentUser || isLoadingDiagnosis} className="w-full">
+              <Button type="submit" disabled={isLoadingDiagnosis} className="w-full">
                 {isLoadingDiagnosis ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Brain className="mr-2 h-4 w-4" />}
                 Diagnose Crop
               </Button>
@@ -260,7 +222,7 @@ export default function DiagnosisForm() {
             {diagnosis && (
               <Card className="shadow-xl rounded-xl">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl"><CheckCircle2 className="text-green-500"/>AI Diagnosis</CardTitle>
+                    <CardTitle className="flex items-center gap-2 text-2xl"><CheckCircle2 className="text-green-500"/>AI Diagnosis Result</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p><strong>Disease:</strong> {diagnosis.disease}</p>
@@ -273,27 +235,6 @@ export default function DiagnosisForm() {
                       </ReactMarkdown>
                     </div>
                   </div>
-                  
-                  {diagnosis.historyId && currentUser && (
-                    <div className="mt-4 pt-4 border-t">
-                      {diagnosis.expertReviewRequested ? (
-                        <div className="flex items-center gap-2 text-sm text-blue-600 p-2 bg-blue-50 rounded-md">
-                           <UserCheck className="h-5 w-5"/> 
-                           <span>Expert review has been requested. You will be notified.</span>
-                        </div>
-                      ) : (
-                        <Button 
-                          onClick={handleRequestExpertReview} 
-                          disabled={isRequestingExpert} 
-                          variant="outline" 
-                          className="w-full"
-                        >
-                          {isRequestingExpert ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquareWarning className="mr-2 h-4 w-4" />}
-                          Not Satisfied? Request Expert Review
-                        </Button>
-                      )}
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             )}
