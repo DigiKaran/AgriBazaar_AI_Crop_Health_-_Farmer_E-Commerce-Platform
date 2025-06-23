@@ -164,7 +164,10 @@ export const getProducts = async (): Promise<Product[]> => {
         const querySnapshot = await getDocs(q);
         const products: Product[] = [];
         querySnapshot.forEach((doc) => {
-            products.push({ id: doc.id, ...doc.data() } as Product);
+            // Filter out the placeholder document
+            if (doc.id !== '_placeholder_') {
+                products.push({ id: doc.id, ...doc.data() } as Product);
+            }
         });
         return products;
     } catch (error: any) {
@@ -182,7 +185,10 @@ export const getProductCategories = async (): Promise<ProductCategory[]> => {
         const querySnapshot = await getDocs(q);
         const categories: ProductCategory[] = [];
         querySnapshot.forEach((doc) => {
-            categories.push({ id: doc.id, ...doc.data() } as ProductCategory);
+            // Filter out the placeholder document
+            if (doc.id !== '_placeholder_') {
+                categories.push({ id: doc.id, ...doc.data() } as ProductCategory);
+            }
         });
         return categories;
     } catch (error: any) {

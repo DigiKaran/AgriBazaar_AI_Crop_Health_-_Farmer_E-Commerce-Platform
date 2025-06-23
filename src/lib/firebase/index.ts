@@ -1,7 +1,7 @@
 
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
-import { getFirestore, type Firestore, enableIndexedDbPersistence, CACHE_SIZE_UNLIMITED } from "firebase/firestore";
+import { getFirestore, type Firestore, enableIndexedDbPersistence, CACHE_SIZE_UNLIMITED, doc, getDoc, writeBatch } from "firebase/firestore";
 import { firebaseConfig } from "./config";
 
 let app: FirebaseApp;
@@ -16,6 +16,39 @@ if (getApps().length === 0) {
 
 auth = getAuth(app);
 db = getFirestore(app);
+
+// Function to create placeholder documents to ensure collections are visible in Firestore console
+const ensureCollectionsExist = async () => {
+  const collectionsToEnsure = ['products', 'product_categories', 'orders'];
+  const batch = writeBatch(db);
+  let writesMade = false;
+
+  for (const collectionName of collectionsToEnsure) {
+    const placeholderRef = doc(db, collectionName, '_placeholder_');
+    try {
+      const docSnap = await getDoc(placeholderRef);
+      if (!docSnap.exists()) {
+        batch.set(placeholderRef, {
+          info: `This is a placeholder for the '${collectionName}' collection.`,
+          createdAt: new Date(),
+        });
+        writesMade = true;
+      }
+    } catch (e) {
+      console.error(`Error checking/creating placeholder for ${collectionName}:`, e);
+    }
+  }
+
+  if (writesMade) {
+    try {
+      await batch.commit();
+      console.log("Firestore placeholder documents created.");
+    } catch (e) {
+      console.error("Error committing placeholder batch:", e);
+    }
+  }
+};
+
 
 // Attempt to enable offline persistence
 try {
@@ -35,5 +68,9 @@ try {
 } catch (error) {
     console.error("Error enabling Firestore offline persistence:", error);
 }
+
+// Run this initialization logic once when the app loads.
+ensureCollectionsExist();
+
 
 export { app, auth, db };
