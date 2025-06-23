@@ -42,17 +42,25 @@ export const getDiagnosisHistoryEntry = async (id: string): Promise<DiagnosisHis
 
 export const getPendingExpertQueries = async (): Promise<DiagnosisHistoryEntry[]> => {
   try {
+    // Simplified query to avoid needing a composite index.
+    // We will sort the results in code after fetching.
     const q = query(
       collection(db, DIAGNOSIS_HISTORY_COLLECTION),
-      where("expertReviewRequested", "==", true),
-      where("status", "==", "pending_expert"),
-      orderBy("timestamp", "asc") // Show oldest requests first
+      where("status", "==", "pending_expert")
     );
     const querySnapshot = await getDocs(q);
     const queries: DiagnosisHistoryEntry[] = [];
     querySnapshot.forEach((doc) => {
       queries.push({ id: doc.id, ...doc.data() } as DiagnosisHistoryEntry);
     });
+
+    // Sort the queries by timestamp in ascending order (oldest first)
+    queries.sort((a, b) => {
+        const timeA = a.timestamp?.seconds || 0;
+        const timeB = b.timestamp?.seconds || 0;
+        return timeA - timeB;
+    });
+
     return queries;
   } catch (error: any) {
     console.error("Error fetching pending expert queries from DB: ", error);
