@@ -20,26 +20,7 @@ import {
     saveOrder as saveOrderToDb,
     getProducts as getProductsFromDb,
 } from './firebase/firestore';
-import { getUserProfile } from './firebase/auth';
 import { serverTimestamp } from 'firebase/firestore';
-
-
-// Server-side validation helper
-const verifyAdmin = async (userId?: string | null): Promise<{ isAdmin: boolean; error?: string }> => {
-  if (!userId) {
-    return { isAdmin: false, error: 'Authentication required to perform this action.' };
-  }
-  try {
-    const userProfile = await getUserProfile(userId);
-    if (userProfile?.role === 'admin') {
-      return { isAdmin: true };
-    }
-    return { isAdmin: false, error: 'Permission Denied: User is not an administrator.' };
-  } catch (error: any) {
-    console.error('Error verifying admin status:', error);
-    return { isAdmin: false, error: `Failed to verify admin status: ${error.message}` };
-  }
-};
 
 
 interface DiagnoseCropActionResult {
@@ -186,9 +167,10 @@ export async function requestExpertReviewAction(
 }
 
 export async function fetchAllUsersAction(adminUserId: string): Promise<{ users?: UserProfile[]; error?: string }> {
-  const adminCheck = await verifyAdmin(adminUserId);
-  if (!adminCheck.isAdmin) {
-    return { error: adminCheck.error };
+  // Bypassing server-side role check as per user request for project simplicity.
+  // Security is handled by Firestore rules.
+  if (!adminUserId) {
+    return { error: "An authenticated user is required." };
   }
   try {
     const users = await getAllUsersFromDb();
@@ -209,21 +191,25 @@ export async function updateUserByAdminAction(
   updates: { role: UserRole; status: 'active' | 'inactive' },
   adminUserId: string
 ): Promise<{ success?: boolean; error?: string }> {
-   const adminCheck = await verifyAdmin(adminUserId);
-    if (!adminCheck.isAdmin) {
-        return { error: adminCheck.error };
+    // Bypassing server-side role check.
+    if (!adminUserId) {
+      return { success: false, error: 'An authenticated user is required.' };
     }
-  try {
-    await updateUserByAdminInDb(targetUserId, updates);
-    return { success: true };
-  } catch (error: any) {
-    console.error('Error updating user profile action:', error);
-    const specificError = error.message || 'An unknown error occurred.';
-    return { error: `Failed to update user profile. ${specificError}`.trim() };
-  }
+    try {
+      await updateUserByAdminInDb(targetUserId, updates);
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error updating user profile action:', error);
+      const specificError = error.message || 'An unknown error occurred.';
+      return { error: `Failed to update user profile. ${specificError}`.trim() };
+    }
 }
 
-export async function fetchPendingExpertQueriesAction(adminOrExpertUserId: string): Promise<{ queries?: DiagnosisHistoryEntry[]; error?: string }> {
+export async function fetchPendingExpertQueriesAction(reviewerUserId: string): Promise<{ queries?: DiagnosisHistoryEntry[]; error?: string }> {
+  // Bypassing server-side role check.
+  if (!reviewerUserId) {
+    return { error: "An authenticated user is required." };
+  }
   try {
     const queries = await getPendingExpertQueriesFromDb();
     return { queries };
@@ -240,6 +226,9 @@ export async function submitExpertDiagnosisAction(
   expertDiagnosis: string,
   expertComments: string
 ): Promise<{ success?: boolean; error?: string; message?: string }> {
+  if (!reviewerUserId) {
+    return { success: false, error: 'An authenticated user is required.' };
+  }
   if (!queryId) {
     return { error: "Query ID is required.", success: false };
   }
@@ -271,9 +260,9 @@ export async function getProductCategoriesAction(): Promise<{ categories?: Produ
 }
 
 export async function addProductCategoryAction(adminUserId: string, name: string): Promise<{ category?: ProductCategory; error?: string }> {
-    const adminCheck = await verifyAdmin(adminUserId);
-    if (!adminCheck.isAdmin) {
-        return { error: adminCheck.error };
+    // Bypassing server-side role check.
+    if (!adminUserId) {
+      return { error: "An authenticated user is required." };
     }
     if (!name || name.trim().length < 2) {
         return { error: "Category name must be at least 2 characters long." };
@@ -287,9 +276,9 @@ export async function addProductCategoryAction(adminUserId: string, name: string
 }
 
 export async function deleteProductCategoryAction(adminUserId: string, id: string): Promise<{ success?: boolean; error?: string }> {
-    const adminCheck = await verifyAdmin(adminUserId);
-    if (!adminCheck.isAdmin) {
-        return { error: adminCheck.error };
+    // Bypassing server-side role check.
+    if (!adminUserId) {
+      return { error: "An authenticated user is required." };
     }
     try {
         await deleteProductCategoryFromDb(id);
@@ -300,9 +289,9 @@ export async function deleteProductCategoryAction(adminUserId: string, id: strin
 }
 
 export async function getAdminDashboardStatsAction(adminUserId: string): Promise<{ stats?: AdminDashboardStats; error?: string }> {
-  const adminCheck = await verifyAdmin(adminUserId);
-  if (!adminCheck.isAdmin) {
-    return { error: adminCheck.error };
+  // Bypassing server-side role check.
+  if (!adminUserId) {
+    return { error: "An authenticated user is required." };
   }
   try {
     const [users, diagnoses, pendingQueries, categories] = await Promise.all([
