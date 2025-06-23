@@ -41,12 +41,23 @@ const prompt = ai.definePrompt({
   name: 'diagnoseCropDiseasePrompt',
   input: {schema: DiagnoseCropDiseaseInputSchema},
   output: {schema: DiagnoseCropDiseaseOutputSchema},
-  prompt: `You are a highly accurate expert agricultural botanist specializing in diagnosing crop diseases common in India, with a target accuracy of 90% or higher. Analyze the following information and provide a precise diagnosis, your confidence level (a number between 0 and 1 representing your certainty), and detailed treatment recommendations suitable for Indian farming conditions. Consider common Indian crops like rice, wheat, cotton, sugarcane, pulses, etc.
+  prompt: `You are a highly accurate expert agricultural botanist specializing in diagnosing crop diseases common in India, with a target accuracy of 90% or higher. Analyze the following information and provide a precise diagnosis in the specified JSON format.
+Your diagnosis should include the disease name, your confidence level (a number between 0 and 1), and detailed treatment recommendations suitable for Indian farming conditions.
+Consider common Indian crops like rice, wheat, cotton, sugarcane, pulses, etc.
 
 Crop Description: {{{description}}}
 Crop Photo: {{media url=photoDataUri}}
 
-Your response must include the identified disease, your confidence in this diagnosis (e.g., 0.9 for 90% confidence), and actionable treatment steps relevant to Indian agricultural practices. If the image does not clearly depict a crop, or if you cannot determine the disease with reasonable confidence, please state that clearly.`,
+Your response MUST be a valid JSON object matching this structure:
+{
+  "diagnosis": {
+    "disease": "The identified disease",
+    "confidence": 0.9,
+    "treatmentRecommendations": "Detailed treatment steps..."
+  }
+}
+
+If the image does not clearly depict a crop, or if you cannot determine the disease with reasonable confidence, set the disease to "Unknown" and confidence to a low value.`,
 });
 
 const diagnoseCropDiseaseFlow = ai.defineFlow(
@@ -60,4 +71,5 @@ const diagnoseCropDiseaseFlow = ai.defineFlow(
     return output!;
   }
 );
+
 
