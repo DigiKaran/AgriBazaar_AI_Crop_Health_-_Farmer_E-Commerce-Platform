@@ -19,10 +19,16 @@ const GeneratePreventativeMeasuresInputSchema = z.object({
 });
 export type GeneratePreventativeMeasuresInput = z.infer<typeof GeneratePreventativeMeasuresInputSchema>;
 
+const PreventativeMeasureSchema = z.object({
+    title: z.string().describe("A short, catchy title for the preventative measure (e.g., 'Soil Testing & Amendment')."),
+    content: z.string().describe("A detailed description of the preventative measure, formatted as a single paragraph."),
+});
+
 const GeneratePreventativeMeasuresOutputSchema = z.object({
-  preventativeMeasures: z.string().describe('AI-generated preventative measures based on seasonal trends for the specified crop in the Indian context.'),
+  measures: z.array(PreventativeMeasureSchema).length(3, 5).describe('An array of 3 to 5 distinct, well-explained preventative measures.'),
 });
 export type GeneratePreventativeMeasuresOutput = z.infer<typeof GeneratePreventativeMeasuresOutputSchema>;
+
 
 export async function generatePreventativeMeasures(input: GeneratePreventativeMeasuresInput): Promise<GeneratePreventativeMeasuresOutput> {
   return generatePreventativeMeasuresFlow(input);
@@ -32,13 +38,28 @@ const prompt = ai.definePrompt({
   name: 'generatePreventativeMeasuresPrompt',
   input: {schema: GeneratePreventativeMeasuresInputSchema},
   output: {schema: GeneratePreventativeMeasuresOutputSchema},
-  prompt: `You are an expert agricultural advisor specializing in Indian farming practices. Based on the crop type, season, and location in India provided, generate preventative measures to protect the crops from common diseases and optimize their growth. Consider typical Indian agricultural cycles (Kharif, Rabi, Zaid if applicable) and climatic conditions.
+  prompt: `You are an expert agricultural advisor specializing in Indian farming practices. Based on the crop type, season, and location in India provided, generate a list of 3 to 5 distinct preventative measures to protect the crops from common diseases and optimize their growth.
+For each measure, provide a clear title and a detailed content description.
+Consider typical Indian agricultural cycles (Kharif, Rabi, Zaid if applicable) and climatic conditions.
 
 Crop Type: {{{cropType}}}
 Season: {{{season}}}
 Location: {{{location}}} (India)
 
-Preventative Measures:`,
+Your output must be a structured JSON object containing an array of measures.
+Example Format:
+{
+  "measures": [
+    {
+      "title": "Soil Testing & Amendment",
+      "content": "Conduct regular soil tests to determine nutrient deficiencies and pH levels. Amend the soil accordingly with organic matter (compost, manure) or specific fertilizers based on the recommendations."
+    },
+    {
+      "title": "Seed Selection & Treatment",
+      "content": "Use certified disease-resistant seeds suitable for the local climate and soil conditions. Treat seeds with appropriate fungicides or bio-control agents before sowing to protect against seed-borne pathogens."
+    }
+  ]
+}`,
 });
 
 const generatePreventativeMeasuresFlow = ai.defineFlow(

@@ -152,7 +152,7 @@ export default function DiagnosisForm() {
         setError(result.error);
          toast({ variant: "destructive", title: "Failed", description: result.error });
       } else {
-        setPreventativeMeasures({ measures: result.preventativeMeasures });
+        setPreventativeMeasures({ measures: result.measures });
         toast({ title: "Preventative Measures Generated", description: "Tips are ready for you." });
       }
     } catch (err) {
@@ -242,23 +242,21 @@ export default function DiagnosisForm() {
           </form>
         </Card>
 
-        {(diagnosis || preventativeMeasures || error) && (
-          <Card className="shadow-xl rounded-xl">
-            <CardHeader>
-              <CardTitle className="text-2xl">Analysis Results</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+        <div className="space-y-8">
+            {error && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-              {diagnosis && (
-                <div className="space-y-4 p-4 border rounded-lg bg-background">
-                  <h3 className="font-headline text-xl flex items-center gap-2"><CheckCircle2 className="text-green-500"/>Diagnosis</h3>
+            {diagnosis && (
+              <Card className="shadow-xl rounded-xl">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-2xl"><CheckCircle2 className="text-green-500"/>AI Diagnosis</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <p><strong>Disease:</strong> {diagnosis.disease}</p>
                   <p><strong>Confidence:</strong> {(diagnosis.confidence * 100).toFixed(0)}%</p>
                   <div>
@@ -290,58 +288,70 @@ export default function DiagnosisForm() {
                       )}
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            )}
 
-                  {!preventativeMeasures && (
-                    <div className="mt-6 pt-4 border-t">
-                       <h4 className="font-headline text-lg mb-2">Additional Options</h4>
-                       <FormField
-                          control={form.control}
-                          name="cropType"
-                          render={({ field }) => (
-                            <FormItem className="mb-2">
-                              <FormLabel>Crop Type (for prevention tips)</FormLabel>
-                              <FormControl><Input {...field} disabled={isLoadingPreventative} /></FormControl>
-                            </FormItem>
-                          )}
-                        />
-                       <FormField
-                          control={form.control}
-                          name="season"
-                          render={({ field }) => (
-                            <FormItem className="mb-2">
-                              <FormLabel>Current Season</FormLabel>
-                              <FormControl><Input {...field} disabled={isLoadingPreventative} /></FormControl>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="location"
-                          render={({ field }) => (
-                            <FormItem className="mb-4">
-                              <FormLabel>Location</FormLabel>
-                              <FormControl><Input {...field} disabled={isLoadingPreventative} /></FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      <Button onClick={handleGetPreventativeMeasures} disabled={isLoadingPreventative} variant="outline" className="w-full">
-                        {isLoadingPreventative ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-                        Get Preventative Measures
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {preventativeMeasures && (
-                <div className="space-y-4 p-4 border rounded-lg bg-background mt-4">
-                  <h3 className="font-headline text-xl flex items-center gap-2"><ShieldCheck className="text-blue-500"/>Preventative Measures</h3>
-                  <p className="whitespace-pre-wrap text-sm">{preventativeMeasures.measures}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+            {diagnosis && (
+                <Card className="shadow-xl rounded-xl">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-2xl"><ShieldCheck className="text-blue-500"/>Preventative Measures</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {isLoadingPreventative && (
+                            <div className="flex items-center justify-center py-6">
+                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                <p className="ml-2 text-muted-foreground">Generating tips...</p>
+                            </div>
+                        )}
+                        {!preventativeMeasures && !isLoadingPreventative && (
+                            <div className="space-y-4">
+                                <CardDescription>Get AI-powered prevention tips for this crop.</CardDescription>
+                                <FormField
+                                    control={form.control}
+                                    name="cropType"
+                                    render={({ field }) => (
+                                        <FormItem><FormLabel>Crop Type</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="season"
+                                    render={({ field }) => (
+                                        <FormItem><FormLabel>Current Season</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="location"
+                                    render={({ field }) => (
+                                        <FormItem><FormLabel>Location</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                                    )}
+                                />
+                                <Button onClick={handleGetPreventativeMeasures} className="w-full">
+                                    <ShieldCheck className="mr-2 h-4 w-4" /> Get Tips
+                                </Button>
+                            </div>
+                        )}
+                        {preventativeMeasures && (
+                             <div className="space-y-4">
+                                {preventativeMeasures.measures.map((measure, index) => (
+                                  <div key={index} className="p-3 border-b last:border-b-0">
+                                    <h4 className="font-headline text-lg flex items-center gap-2">
+                                        <ShieldCheck className="h-4 w-4 text-primary" />
+                                        {measure.title}
+                                    </h4>
+                                    <div className="chat-prose ml-6 mt-1">
+                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{measure.content}</ReactMarkdown>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+        </div>
       </div>
     </Form>
   );

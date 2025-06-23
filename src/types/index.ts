@@ -22,8 +22,13 @@ export interface DiagnosisResult {
   treatmentRecommendations: string;
 }
 
+export interface PreventativeMeasure {
+  title: string;
+  content: string;
+}
+
 export interface PreventativeMeasuresResult {
-  measures: string;
+  measures: PreventativeMeasure[];
 }
 
 export type UserRole = 'farmer' | 'admin' | 'expert';
