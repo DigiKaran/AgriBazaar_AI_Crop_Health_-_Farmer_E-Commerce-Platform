@@ -121,25 +121,26 @@ export const getAllUsers = async (): Promise<UserProfile[]> => {
     console.error("Error fetching all users from DB: ", error);
     let errorMessage = "Failed to fetch users.";
     if (error.message) {
-      errorMessage += ` Firebase: ${error.message}`;
-    }
-    if (error.code) {
-      errorMessage += ` (Code: ${error.code})`;
+      errorMessage += ` Details: ${error.message}`;
     }
     throw new Error(errorMessage);
   }
 };
 
-export const updateUserRole = async (userId: string, newRole: UserRole): Promise<void> => {
+export const updateUserByAdmin = async (userId: string, updates: Partial<Pick<UserProfile, 'role' | 'status'>>): Promise<void> => {
   try {
     const userRef = doc(db, USERS_COLLECTION, userId);
-    await updateDoc(userRef, { role: newRole });
+    // Filter out undefined values so we don't accidentally wipe fields
+    const validUpdates = Object.fromEntries(Object.entries(updates).filter(([_, v]) => v !== undefined));
+    if (Object.keys(validUpdates).length === 0) {
+        return; // Nothing to update
+    }
+    await updateDoc(userRef, validUpdates);
   } catch (error: any) {
-    console.error("Error updating user role: ", error);
-    let errorMessage = "Failed to update user role.";
+    console.error("Error updating user by admin: ", error);
+    let errorMessage = "Failed to update user profile.";
     if (error.message) errorMessage += ` Firebase: ${error.message}`;
     if (error.code) errorMessage += ` (Code: ${error.code})`;
     throw new Error(errorMessage);
   }
 };
-

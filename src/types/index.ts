@@ -30,6 +30,7 @@ export interface UserProfile {
   photoURL?: string | null;
   createdAt: any; // Firestore Timestamp or { seconds: number, nanoseconds: number }
   role: UserRole;
+  status?: 'active' | 'inactive';
 }
 
 export interface WeatherData {
@@ -77,4 +78,3 @@ export interface ChatMessage {
   text: string;
   timestamp: any; // Firestore serverTimestamp
 }
-

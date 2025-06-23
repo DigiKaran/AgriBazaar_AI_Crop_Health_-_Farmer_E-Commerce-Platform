@@ -61,6 +61,7 @@ export const createUserProfileDocument = async (user: FirebaseUser, additionalDa
         photoURL: photoURL || null, // Save photoURL from Google
         createdAt,
         role: 'farmer', // Default role for new profiles
+        status: 'active', // Default status for new profiles
         ...additionalData,
       });
     } catch (error) {
@@ -86,7 +87,13 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
   const snapshot = await getDoc(userRef);
   if (snapshot.exists()) {
     const data = snapshot.data();
-    return { role: 'farmer', ...data } as UserProfile;
+    // Provide default values for role and status if they don't exist on the document
+    const profile: UserProfile = {
+      role: 'farmer',
+      status: 'active',
+      ...data
+    } as UserProfile;
+    return profile;
   }
   return null;
 };

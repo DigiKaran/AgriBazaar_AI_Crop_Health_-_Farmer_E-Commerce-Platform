@@ -10,7 +10,7 @@ import {
     saveChatMessage as saveMessageToDb,
     updateDiagnosisHistoryEntry,
     getAllUsers as getAllUsersFromDb,
-    updateUserRole as updateUserRoleInDb,
+    updateUserByAdmin as updateUserByAdminInDb,
     getPendingExpertQueries as getPendingExpertQueriesFromDb,
 } from './firebase/firestore';
 
@@ -129,31 +129,28 @@ export async function fetchAllUsersAction(adminUserId: string): Promise<{ users?
     console.error('Error in fetchAllUsersAction:', error);
     let errorMessage = "Failed to fetch users.";
     if (error && typeof error === 'object' && 'message' in error) {
-      errorMessage += ` Firebase: ${error.message}`;
-    }
-    if (error && typeof error === 'object' && 'code' in error) {
-      errorMessage += ` (Code: ${error.code})`;
+      errorMessage += ` Details: ${error.message}`;
     }
     return { error: errorMessage.trim() };
   }
 }
 
-export async function updateUserRoleAction(
+export async function updateUserByAdminAction(
   targetUserId: string, 
-  newRole: UserRole, 
+  updates: { role: UserRole; status: 'active' | 'inactive' },
   adminUserId: string
 ): Promise<{ success?: boolean; error?: string }> {
   if (!adminUserId) {
-    console.error("updateUserRoleAction: adminUserId is missing.");
-    return { error: 'Admin user ID is missing. Cannot update role.' };
+    console.error("updateUserByAdminAction: adminUserId is missing.");
+    return { error: 'Admin user ID is missing. Cannot update profile.' };
   }
   try {
-    await updateUserRoleInDb(targetUserId, newRole);
+    await updateUserByAdminInDb(targetUserId, updates);
     return { success: true };
   } catch (error: any) {
-    console.error('Error updating user role action:', error);
+    console.error('Error updating user profile action:', error);
     const specificError = error.message || 'An unknown error occurred.';
-    return { error: `Failed to update user role. ${specificError}`.trim() };
+    return { error: `Failed to update user profile. ${specificError}`.trim() };
   }
 }
 
