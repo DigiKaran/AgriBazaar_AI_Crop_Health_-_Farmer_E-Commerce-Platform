@@ -6,6 +6,7 @@ import { generatePreventativeMeasures, type GeneratePreventativeMeasuresInput, t
 import { getLocalizedFarmingTips, type GetLocalizedFarmingTipsInput, type GetLocalizedFarmingTipsOutput } from '@/ai/flows/get-localized-farming-tips';
 import { agriBotChat } from '@/ai/flows/agri-bot-chat';
 import type { LocalizedFarmingTip, DiagnosisResult, ChatMessage, DiagnosisHistoryEntry, UserProfile, UserRole, ProductCategory, AdminDashboardStats, CartItem, ShippingAddress, AgriBotChatInput, AgriBotChatOutput, Product } from '@/types';
+import { getUserProfile } from './firebase/auth';
 import { 
     saveDiagnosisEntryToDb,
     saveChatMessage as saveMessageToDb,
@@ -166,12 +167,41 @@ export async function requestExpertReviewAction(
 }
 
 // Admin & Marketplace Actions
+// Helper function for admin role verification
+const verifyAdmin = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+  if (!userId) {
+    return { success: false, error: 'User ID is missing. Cannot perform admin action.' };
+  }
+  try {
+    const userProfile = await getUserProfile(userId);
+    if (userProfile?.role !== 'admin') {
+      return { success: false, error: 'Permission denied. You must be an admin to perform this action.' };
+    }
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: 'Failed to verify admin status.' };
+  }
+};
+
+const verifyAdminOrExpert = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!userId) {
+        return { success: false, error: 'User ID is missing. Cannot perform this action.' };
+    }
+    try {
+        const userProfile = await getUserProfile(userId);
+        if (userProfile?.role !== 'admin' && userProfile?.role !== 'expert') {
+            return { success: false, error: 'Permission denied. You must be an admin or expert.' };
+        }
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: 'Failed to verify user role.' };
+    }
+};
 
 export async function fetchAllUsersAction(adminUserId: string): Promise<{ users?: UserProfile[]; error?: string }> {
-  if (!adminUserId) {
-    console.error("fetchAllUsersAction: adminUserId is missing.");
-    return { error: 'Admin user ID is missing. Cannot fetch users.' };
-  }
+  const adminCheck = await verifyAdmin(adminUserId);
+  if (!adminCheck.success) return { error: adminCheck.error };
+
   try {
     const users = await getAllUsersFromDb();
     return { users };
@@ -191,10 +221,9 @@ export async function updateUserByAdminAction(
   updates: { role: UserRole; status: 'active' | 'inactive' },
   adminUserId: string
 ): Promise<{ success?: boolean; error?: string }> {
-  if (!adminUserId) {
-    console.error("updateUserByAdminAction: adminUserId is missing.");
-    return { error: 'Admin user ID is missing. Cannot update profile.' };
-  }
+  const adminCheck = await verifyAdmin(adminUserId);
+  if (!adminCheck.success) return { success: false, error: adminCheck.error };
+
   try {
     await updateUserByAdminInDb(targetUserId, updates);
     return { success: true };
@@ -206,10 +235,9 @@ export async function updateUserByAdminAction(
 }
 
 export async function fetchPendingExpertQueriesAction(adminOrExpertUserId: string): Promise<{ queries?: DiagnosisHistoryEntry[]; error?: string }> {
-  if (!adminOrExpertUserId) {
-    console.error("fetchPendingExpertQueriesAction: adminOrExpertUserId is missing.");
-    return { error: 'User ID is missing. Cannot fetch queries.' };
-  }
+  const roleCheck = await verifyAdminOrExpert(adminOrExpertUserId);
+  if (!roleCheck.success) return { error: roleCheck.error };
+  
   try {
     const queries = await getPendingExpertQueriesFromDb();
     return { queries };
@@ -226,9 +254,9 @@ export async function submitExpertDiagnosisAction(
   expertDiagnosis: string,
   expertComments: string
 ): Promise<{ success?: boolean; error?: string; message?: string }> {
-  if (!reviewerUserId) {
-    return { error: "Reviewer user ID not provided.", success: false };
-  }
+  const roleCheck = await verifyAdminOrExpert(reviewerUserId);
+  if (!roleCheck.success) return { success: false, error: roleCheck.error };
+  
   if (!queryId) {
     return { error: "Query ID is required.", success: false };
   }
@@ -250,9 +278,7 @@ export async function submitExpertDiagnosisAction(
   }
 }
 
-export async function getProductCategoriesAction(adminUserId?: string): Promise<{ categories?: ProductCategory[]; error?: string }> {
-    // Admin check is optional here, as we might want to fetch categories for public display
-    // For admin-only actions, the adminUserId check is mandatory.
+export async function getProductCategoriesAction(): Promise<{ categories?: ProductCategory[]; error?: string }> {
     try {
         const categories = await getProductCategoriesFromDb();
         return { categories };
@@ -262,9 +288,9 @@ export async function getProductCategoriesAction(adminUserId?: string): Promise<
 }
 
 export async function addProductCategoryAction(adminUserId: string, name: string): Promise<{ category?: ProductCategory; error?: string }> {
-    if (!adminUserId) {
-        return { error: "Admin authentication required." };
-    }
+    const adminCheck = await verifyAdmin(adminUserId);
+    if (!adminCheck.success) return { error: adminCheck.error };
+
     if (!name || name.trim().length < 2) {
         return { error: "Category name must be at least 2 characters long." };
     }
@@ -277,9 +303,9 @@ export async function addProductCategoryAction(adminUserId: string, name: string
 }
 
 export async function deleteProductCategoryAction(adminUserId: string, id: string): Promise<{ success?: boolean; error?: string }> {
-    if (!adminUserId) {
-        return { error: "Admin authentication required." };
-    }
+    const adminCheck = await verifyAdmin(adminUserId);
+    if (!adminCheck.success) return { success: false, error: adminCheck.error };
+    
     try {
         await deleteProductCategoryFromDb(id);
         return { success: true };
@@ -289,10 +315,9 @@ export async function deleteProductCategoryAction(adminUserId: string, id: strin
 }
 
 export async function getAdminDashboardStatsAction(adminUserId: string): Promise<{ stats?: AdminDashboardStats; error?: string }> {
-  if (!adminUserId) {
-    return { error: 'Admin user ID is missing. Cannot fetch stats.' };
-  }
-  // Note: Firestore security rules are the primary enforcement for admin-only access.
+  const adminCheck = await verifyAdmin(adminUserId);
+  if (!adminCheck.success) return { error: adminCheck.error };
+  
   try {
     const [users, diagnoses, pendingQueries, categories] = await Promise.all([
       getAllUsersFromDb(),
@@ -356,12 +381,6 @@ export async function placeOrderAction(input: PlaceOrderInput): Promise<{ succes
             ...input,
             status: 'placed',
         });
-        
-        // Here you would typically also:
-        // 1. Process payment via a payment gateway
-        // 2. Decrement stock for each product
-        // 3. Send a confirmation email
-        // For this project, we are just saving the order.
         
         return { success: true, orderId };
     } catch (error: any) {

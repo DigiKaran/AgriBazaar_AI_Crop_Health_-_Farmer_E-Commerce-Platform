@@ -10,70 +10,67 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // Checks if the requesting user has the 'admin' role in their user document.
-      // The exists() check is a safeguard against errors if the doc hasn't been created yet.
+      // The exists() check is a safeguard against race conditions on sign-up.
       return request.auth != null &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     function isExpert() {
-      // Checks if the requesting user has the 'expert' role in their user document.
       return request.auth != null &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'expert';
     }
 
-    // --- Rules for 'users' collection ---
+    // --- 'users' Collection ---
     match /users/{userId} {
+      // GET: Admins/Experts can get any user. A user can get their own profile.
       allow get: if isAdmin() || isExpert() || isUser(userId);
+      // LIST: Only admins can list all users.
+      allow list: if isAdmin();
+      // CREATE: A user can create their own profile.
       allow create: if isUser(userId);
-      allow update: if isAdmin() || (isUser(userId) && request.resource.data.role == resource.data.role && request.resource.data.status == resource.data.status);
+      // UPDATE: Admins can update any user. A user can update their own profile (but not their role/status).
+      allow update: if isAdmin() || (isUser(userId) && request.resource.data.role == resource.data.role);
+      // DELETE: Only admins can delete users.
       allow delete: if isAdmin();
     }
-    match /users {
-      allow list: if isAdmin();
-    }
 
-    // --- CORRECTED: Rules for 'products' collection ---
+    // --- 'products' and 'product_categories' Collections ---
     match /products/{productId} {
+      // READ: Anyone can view products.
       allow get, list: if true;
+      // WRITE: Only admins can create, update, or delete products.
       allow write: if isAdmin();
     }
-
-    // --- CORRECTED: Rules for 'product_categories' collection ---
+    
     match /product_categories/{categoryId} {
+       // READ: Anyone can view categories.
       allow get, list: if true;
+      // WRITE: Only admins can write.
       allow write: if isAdmin();
     }
 
-    // --- Rules for 'diagnosis_history' collection ---
+    // --- 'diagnosis_history' Collection ---
     match /diagnosis_history/{docId} {
-      allow create: if isUser(request.resource.data.userId);
-      allow get: if isAdmin() || isExpert() || isUser(resource.data.userId);
-      allow update: if isAdmin() || isExpert() || isUser(resource.data.userId);
-      allow delete: if isAdmin() || isUser(resource.data.userId);
+      // READ/WRITE: Admins/Experts can access any entry. A user can only access their own.
+      allow read, write: if isAdmin() || isExpert() || isUser(resource.data.userId);
     }
-    match /diagnosis_history {
-      allow list: if isAdmin() || isExpert() || (request.auth != null && request.query.where.userId == request.auth.uid);
-    }
-
-    // --- Rules for 'chat_messages' collection ---
+    
+    // --- 'chat_messages' Collection ---
     match /chat_messages/{docId} {
-      allow read, create: if isUser(resource.data.userId);
-    }
-    match /chat_messages {
-        allow list: if request.auth != null && request.query.where.userId == request.auth.uid;
+       // A user can create and read their own chat messages.
+      allow read, create: if isUser(request.resource.data.userId);
     }
 
-    // --- Rules for 'orders' collection ---
+    // --- 'orders' Collection ---
     match /orders/{orderId} {
+      // CREATE: A user can create their own order.
       allow create: if isUser(request.resource.data.userId);
+      // READ: An admin can read any order. A user can read their own.
       allow read: if isAdmin() || isUser(resource.data.userId);
+      // UPDATE/DELETE: Only admins can modify orders.
       allow update, delete: if isAdmin();
-    }
-    match /orders {
-        allow list: if isAdmin() || (request.auth != null && request.query.where.userId == request.auth.uid);
     }
   }
 }
