@@ -49,9 +49,7 @@ const agriBotChatFlow = ai.defineFlow(
 - Never provide medical or financial advice. For complex issues, always recommend consulting a local agricultural expert or authority.
 - Answer in the same language as the user's message if you can confidently detect it (e.g., Hindi, Marathi), otherwise default to English.`;
 
-    const model = ai.model('googleai/gemini-2.0-flash');
     const {output} = await ai.generate({
-        model,
         system: systemInstruction,
         history: history,
         prompt: message,
