@@ -1,38 +1,34 @@
 import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, doc, updateDoc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "./index";
-import type { DiagnosisHistoryEntry, ChatMessage, UserProfile, UserRole, ProductCategory, Order, OrderBase } from '@/types';
+import type { DiagnosisHistoryEntry, ChatMessage, UserProfile, UserRole, ProductCategory, Order, OrderBase, DiagnosisResult } from '@/types';
 
 // Diagnosis History
 const DIAGNOSIS_HISTORY_COLLECTION = 'diagnosis_history';
 
-export const saveDiagnosisHistory = async (entry: Omit<DiagnosisHistoryEntry, 'id' | 'timestamp' | 'status' | 'expertReviewRequested' | 'expertDiagnosis' | 'expertComments' | 'expertReviewedBy' | 'expertReviewedAt'>): Promise<string> => {
+export const saveDiagnosisQueryToDb = async (entry: {
+  userId: string;
+  photoDataUri: string;
+  description: string;
+  diagnosis?: DiagnosisResult | null;
+}): Promise<string> => {
   try {
-    const docRef = await addDoc(collection(db, DIAGNOSIS_HISTORY_COLLECTION), {
-      ...entry,
+    const isDirectQuery = !entry.diagnosis;
+    
+    const docData: Omit<DiagnosisHistoryEntry, 'id'> = {
+      userId: entry.userId,
+      photoDataUri: entry.photoDataUri,
+      description: entry.description,
+      diagnosis: entry.diagnosis || null,
       timestamp: serverTimestamp(),
-      expertReviewRequested: false,
-      status: 'ai_diagnosed',
-    });
-    return docRef.id;
-  } catch (error) {
-    console.error("Error saving diagnosis history: ", error);
-    throw new Error("Failed to save diagnosis history.");
-  }
-};
+      expertReviewRequested: isDirectQuery,
+      status: isDirectQuery ? 'pending_expert' : 'ai_diagnosed',
+    };
 
-export const saveDirectExpertQuery = async (entry: {userId: string, photoDataUri: string, description: string}): Promise<string> => {
-  try {
-    const docRef = await addDoc(collection(db, DIAGNOSIS_HISTORY_COLLECTION), {
-      ...entry,
-      diagnosis: null,
-      timestamp: serverTimestamp(),
-      expertReviewRequested: true,
-      status: 'pending_expert', // Start directly in the expert queue
-    });
+    const docRef = await addDoc(collection(db, DIAGNOSIS_HISTORY_COLLECTION), docData as any); // Use 'as any' to bypass strict literal type checks for serverTimestamp
     return docRef.id;
   } catch (error) {
-    console.error("Error saving direct expert query: ", error);
-    throw new Error("Failed to save direct expert query.");
+    console.error("Error saving diagnosis query: ", error);
+    throw new Error("Failed to save diagnosis query.");
   }
 };
 
@@ -43,7 +39,7 @@ export const updateDiagnosisHistoryEntry = async (id: string, updates: Partial<D
     if (updates.status === 'expert_reviewed' && !updates.expertReviewedAt) {
         updates.expertReviewedAt = serverTimestamp();
     }
-    await updateDoc(entryRef, updates);
+    await updateDoc(entryRef, updates as any); // Use 'as any' for serverTimestamp
   } catch (error) {
     console.error("Error updating diagnosis history entry: ", error);
     throw new Error("Failed to update diagnosis history.");

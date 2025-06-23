@@ -7,7 +7,7 @@ import { getLocalizedFarmingTips, type GetLocalizedFarmingTipsInput, type GetLoc
 import { agriBotChat } from '@/ai/flows/agri-bot-chat';
 import type { LocalizedFarmingTip, DiagnosisResult, ChatMessage, DiagnosisHistoryEntry, UserProfile, UserRole, ProductCategory, AdminDashboardStats, CartItem, ShippingAddress, AgriBotChatInput, AgriBotChatOutput } from '@/types';
 import { 
-    saveDiagnosisHistory as saveDiagnosisToDb, 
+    saveDiagnosisQueryToDb,
     saveChatMessage as saveMessageToDb,
     updateDiagnosisHistoryEntry,
     getAllUsers as getAllUsersFromDb,
@@ -18,7 +18,6 @@ import {
     deleteProductCategory as deleteProductCategoryFromDb,
     getAllDiagnosisEntries as getAllDiagnosisEntriesFromDb,
     saveOrder as saveOrderToDb,
-    saveDirectExpertQuery as saveDirectExpertQueryToDb
 } from './firebase/firestore';
 
 interface DiagnoseCropActionResult {
@@ -36,13 +35,12 @@ export async function diagnoseCropAction(
     
     if (userId && aiResult.diagnosis) {
       try {
-        const historyEntryBase: Omit<DiagnosisHistoryEntry, 'id' | 'timestamp' | 'status' | 'expertReviewRequested' | 'expertDiagnosis' | 'expertComments' | 'expertReviewedBy' | 'expertReviewedAt'> = {
+        const historyId = await saveDiagnosisQueryToDb({
           userId,
           photoDataUri: input.photoDataUri,
           description: input.description,
           diagnosis: aiResult.diagnosis,
-        };
-        const historyId = await saveDiagnosisToDb(historyEntryBase);
+        });
         return { diagnosis: aiResult.diagnosis, historyId };
       } catch (dbError: any) {
         console.error('Error saving diagnosis to DB:', dbError);
@@ -67,7 +65,7 @@ export async function submitDirectExpertQueryAction(
     return { success: false, error: 'User is not authenticated.' };
   }
   try {
-    const historyId = await saveDirectExpertQueryToDb({
+    const historyId = await saveDiagnosisQueryToDb({
       userId,
       photoDataUri: input.photoDataUri,
       description: input.description,
