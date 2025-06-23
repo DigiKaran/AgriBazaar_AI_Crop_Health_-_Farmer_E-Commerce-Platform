@@ -10,7 +10,6 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // The exists() check is a safeguard against race conditions on sign-up.
       return request.auth != null &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
@@ -22,54 +21,56 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'expert';
     }
 
-    // --- 'users' Collection ---
+    // --- Rules for 'users' collection ---
     match /users/{userId} {
-      // GET: Admins/Experts can get any user. A user can get their own profile.
-      allow get: if isAdmin() || isExpert() || isUser(userId);
-      // LIST: Only admins can list all users.
+      // CORRECTED RULE: A user can always get their own document. This breaks the recursion.
+      // An admin or expert can get any user's document.
+      allow get: if isUser(userId) || isAdmin() || isExpert();
+
+      // LIST: Only admins can list/query all users.
       allow list: if isAdmin();
-      // CREATE: A user can create their own profile.
+      
+      // CREATE: A user can create their own profile document.
       allow create: if isUser(userId);
-      // UPDATE: Admins can update any user. A user can update their own profile (but not their role/status).
-      allow update: if isAdmin() || (isUser(userId) && request.resource.data.role == resource.data.role);
+      
+      // UPDATE: Admins can update any user. A user can only update their own profile without changing their role or status.
+      allow update: if isAdmin() || (isUser(userId) && request.resource.data.role == resource.data.role && request.resource.data.status == resource.data.status);
+      
       // DELETE: Only admins can delete users.
       allow delete: if isAdmin();
     }
 
-    // --- 'products' and 'product_categories' Collections ---
+    // --- Rules for 'products' and 'product_categories' ---
     match /products/{productId} {
-      // READ: Anyone can view products.
-      allow get, list: if true;
-      // WRITE: Only admins can create, update, or delete products.
-      allow write: if isAdmin();
+        allow get, list: if true;
+        allow write: if isAdmin();
     }
-    
+
     match /product_categories/{categoryId} {
-       // READ: Anyone can view categories.
       allow get, list: if true;
-      // WRITE: Only admins can write.
       allow write: if isAdmin();
     }
 
-    // --- 'diagnosis_history' Collection ---
+    // --- Rules for 'diagnosis_history' collection ---
     match /diagnosis_history/{docId} {
-      // READ/WRITE: Admins/Experts can access any entry. A user can only access their own.
-      allow read, write: if isAdmin() || isExpert() || isUser(resource.data.userId);
-    }
-    
-    // --- 'chat_messages' Collection ---
-    match /chat_messages/{docId} {
-       // A user can create and read their own chat messages.
-      allow read, create: if isUser(request.resource.data.userId);
+      allow create: if isUser(request.resource.data.userId);
+      allow get: if isUser(resource.data.userId) || isAdmin() || isExpert();
+      allow list: if isUser(resource.data.userId) || isAdmin() || isExpert();
+      allow update: if isUser(resource.data.userId) || isAdmin() || isExpert();
+      allow delete: if isUser(resource.data.userId) || isAdmin();
     }
 
-    // --- 'orders' Collection ---
+    // --- Rules for 'chat_messages' collection ---
+    match /chat_messages/{docId} {
+      allow read, create: if isUser(request.resource.data.userId);
+      allow list: if isUser(request.resource.data.userId);
+    }
+
+    // --- Rules for 'orders' collection ---
     match /orders/{orderId} {
-      // CREATE: A user can create their own order.
       allow create: if isUser(request.resource.data.userId);
-      // READ: An admin can read any order. A user can read their own.
-      allow read: if isAdmin() || isUser(resource.data.userId);
-      // UPDATE/DELETE: Only admins can modify orders.
+      allow read: if isUser(resource.data.userId) || isAdmin();
+      allow list: if isUser(resource.data.userId) || isAdmin();
       allow update, delete: if isAdmin();
     }
   }
