@@ -5,7 +5,7 @@ import { diagnoseCropDisease, type DiagnoseCropDiseaseInput } from '@/ai/flows/d
 import { generatePreventativeMeasures, type GeneratePreventativeMeasuresInput, type GeneratePreventativeMeasuresOutput } from '@/ai/flows/generate-preventative-measures';
 import { getLocalizedFarmingTips, type GetLocalizedFarmingTipsInput, type GetLocalizedFarmingTipsOutput } from '@/ai/flows/get-localized-farming-tips';
 import { agriBotChat } from '@/ai/flows/agri-bot-chat';
-import type { LocalizedFarmingTip, DiagnosisResult, ChatMessage, DiagnosisHistoryEntry, UserProfile, UserRole, ProductCategory, AdminDashboardStats, CartItem, ShippingAddress, AgriBotChatInput, AgriBotChatOutput, Product } from '@/types';
+import type { LocalizedFarmingTip, DiagnosisResult, ChatMessage, DiagnosisHistoryEntry, UserProfile, UserRole, ProductCategory, AdminDashboardStats, CartItem, ShippingAddress, AgriBotChatInput, AgriBotChatOutput, Product, Order } from '@/types';
 import { 
     saveDiagnosisEntryToDb,
     saveChatMessage as saveMessageToDb,
@@ -19,7 +19,14 @@ import {
     getAllDiagnosisEntries as getAllDiagnosisEntriesFromDb,
     saveOrder as saveOrderToDb,
     getProducts as getProductsFromDb,
+    getUserOrders as getUserOrdersFromDb,
+    addProduct as addProductToDb,
+    updateProduct as updateProductInDb,
+    deleteProduct as deleteProductFromDb,
+    getPendingOrders as getPendingOrdersFromDb,
+    updateOrderStatus as updateOrderStatusInDb,
 } from './firebase/firestore';
+import { updateUserProfileInfo as updateUserProfileInfoInAuth } from './firebase/auth';
 import { serverTimestamp } from 'firebase/firestore';
 
 
@@ -31,12 +38,12 @@ interface DiagnoseCropActionResult {
 
 export async function diagnoseCropAction(
   input: DiagnoseCropDiseaseInput & { photoURL: string },
-  userId?: string
+  userId: string
 ): Promise<DiagnoseCropActionResult> {
   try {
     const aiResult = await diagnoseCropDisease(input);
     
-    if (userId && aiResult.diagnosis) {
+    if (aiResult.diagnosis) {
       try {
         const entryToSave = {
           userId,
@@ -45,7 +52,7 @@ export async function diagnoseCropAction(
           diagnosis: aiResult.diagnosis,
           timestamp: serverTimestamp(),
           expertReviewRequested: false,
-          status: 'ai_diagnosed',
+          status: 'ai_diagnosed' as const,
         };
         const historyId = await saveDiagnosisEntryToDb(entryToSave);
         return { diagnosis: aiResult.diagnosis, historyId };
@@ -54,10 +61,7 @@ export async function diagnoseCropAction(
         return { diagnosis: aiResult.diagnosis, error: `Diagnosis successful, but failed to save history. ${dbError.message || ''}`.trim() };
       }
     }
-     if (aiResult.diagnosis) {
-        return { diagnosis: aiResult.diagnosis };
-    }
-    return { error: aiResult.diagnosis?.toString() ?? 'Unknown error from AI diagnosis' };
+    return { error: 'Unknown error from AI diagnosis' };
   } catch (error: any) {
     console.error('Error in diagnoseCropAction:', error);
     return { error: `Failed to diagnose crop. ${error.message || ''}`.trim() };
@@ -72,7 +76,7 @@ export async function submitDirectExpertQueryAction(
     return { success: false, error: 'User is not authenticated.' };
   }
   try {
-    const entryToSave = {
+    const entryToSave: Omit<DiagnosisHistoryEntry, 'id' | 'timestamp'> & { timestamp: any } = {
       userId,
       photoURL: input.photoURL,
       description: input.description,
@@ -166,7 +170,32 @@ export async function requestExpertReviewAction(
   }
 }
 
-export async function fetchAllUsersAction(): Promise<{ users?: UserProfile[]; error?: string }> {
+// User-facing profile update
+export async function updateUserProfileAction(
+  userId: string, 
+  displayName: string
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        await updateUserProfileInfoInAuth(userId, { displayName });
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: `Failed to update profile. ${error.message || ''}`.trim() };
+    }
+}
+
+// User-facing order history
+export async function getUserOrdersAction(userId: string): Promise<{ orders?: Order[]; error?: string }> {
+    try {
+        const orders = await getUserOrdersFromDb(userId);
+        return { orders };
+    } catch (error: any) {
+        return { error: `Failed to fetch order history. ${error.message || ''}`.trim() };
+    }
+}
+
+
+// Admin Actions
+export async function fetchAllUsersAction(adminId: string): Promise<{ users?: UserProfile[]; error?: string }> {
   try {
     const users = await getAllUsersFromDb();
     return { users };
@@ -182,6 +211,7 @@ export async function fetchAllUsersAction(): Promise<{ users?: UserProfile[]; er
 }
 
 export async function updateUserByAdminAction(
+  adminId: string,
   targetUserId: string, 
   updates: { role: UserRole; status: 'active' | 'inactive' }
 ): Promise<{ success?: boolean; error?: string }> {
@@ -195,7 +225,7 @@ export async function updateUserByAdminAction(
     }
 }
 
-export async function fetchPendingExpertQueriesAction(): Promise<{ queries?: DiagnosisHistoryEntry[]; error?: string }> {
+export async function fetchPendingExpertQueriesAction(adminId: string): Promise<{ queries?: DiagnosisHistoryEntry[]; error?: string }> {
   try {
     const queries = await getPendingExpertQueriesFromDb();
     return { queries };
@@ -236,7 +266,7 @@ export async function submitExpertDiagnosisAction(
   }
 }
 
-export async function getProductCategoriesAction(): Promise<{ categories?: ProductCategory[]; error?: string }> {
+export async function getProductCategoriesAction(adminId: string): Promise<{ categories?: ProductCategory[]; error?: string }> {
     try {
         const categories = await getProductCategoriesFromDb();
         return { categories };
@@ -245,7 +275,7 @@ export async function getProductCategoriesAction(): Promise<{ categories?: Produ
     }
 }
 
-export async function addProductCategoryAction(name: string): Promise<{ category?: ProductCategory; error?: string }> {
+export async function addProductCategoryAction(adminId: string, name: string): Promise<{ category?: ProductCategory; error?: string }> {
     if (!name || name.trim().length < 2) {
         return { error: "Category name must be at least 2 characters long." };
     }
@@ -257,7 +287,7 @@ export async function addProductCategoryAction(name: string): Promise<{ category
     }
 }
 
-export async function deleteProductCategoryAction(id: string): Promise<{ success?: boolean; error?: string }> {
+export async function deleteProductCategoryAction(adminId: string, id: string): Promise<{ success?: boolean; error?: string }> {
     try {
         await deleteProductCategoryFromDb(id);
         return { success: true };
@@ -266,7 +296,7 @@ export async function deleteProductCategoryAction(id: string): Promise<{ success
     }
 }
 
-export async function getAdminDashboardStatsAction(): Promise<{ stats?: AdminDashboardStats; error?: string }> {
+export async function getAdminDashboardStatsAction(adminId: string): Promise<{ stats?: AdminDashboardStats; error?: string }> {
   try {
     const [users, diagnoses, pendingQueries, categories] = await Promise.all([
       getAllUsersFromDb(),
@@ -298,9 +328,7 @@ export async function getAdminDashboardStatsAction(): Promise<{ stats?: AdminDas
   }
 }
 
-// E-commerce Actions
-
-export async function getProductsAction(): Promise<{ products?: Product[]; error?: string }> {
+export async function getProductsAction(adminId: string): Promise<{ products?: Product[]; error?: string }> {
     try {
         const products = await getProductsFromDb();
         return { products };
@@ -309,6 +337,53 @@ export async function getProductsAction(): Promise<{ products?: Product[]; error
     }
 }
 
+export async function addProductAction(adminId: string, productData: Omit<Product, 'id'>): Promise<{ product?: Product; error?: string }> {
+    try {
+        const newId = await addProductToDb(productData);
+        return { product: { ...productData, id: newId } };
+    } catch (error: any) {
+        return { error: `Failed to add product. ${error.message || ''}`.trim() };
+    }
+}
+
+export async function updateProductAction(adminId: string, product: Product): Promise<{ product?: Product; error?: string }> {
+    try {
+        await updateProductInDb(product.id, product);
+        return { product };
+    } catch (error: any) {
+        return { error: `Failed to update product. ${error.message || ''}`.trim() };
+    }
+}
+
+export async function deleteProductAction(adminId: string, productId: string): Promise<{ success?: boolean; error?: string }> {
+    try {
+        await deleteProductFromDb(productId);
+        return { success: true };
+    } catch (error: any) {
+        return { error: `Failed to delete product. ${error.message || ''}`.trim() };
+    }
+}
+
+export async function getPendingOrdersAction(adminId: string): Promise<{ orders?: Order[]; error?: string }> {
+    try {
+        const orders = await getPendingOrdersFromDb();
+        return { orders };
+    } catch (error: any) {
+        return { error: `Failed to fetch pending orders. ${error.message || ''}`.trim() };
+    }
+}
+
+export async function updateOrderStatusAction(adminId: string, orderId: string, status: Order['status']): Promise<{ success?: boolean; error?: string }> {
+    try {
+        await updateOrderStatusInDb(orderId, status);
+        return { success: true };
+    } catch (error: any) {
+        return { error: `Failed to update order status. ${error.message || ''}`.trim() };
+    }
+}
+
+
+// E-commerce Actions
 
 interface PlaceOrderInput {
     userId: string;

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -31,7 +32,7 @@ type ShippingFormValues = z.infer<typeof shippingAddressSchema>;
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser, userProfile, loading: authLoading } = useAuth();
   const { cartItems, cartTotal, clearCart } = useCart();
   const { toast } = useToast();
   
@@ -47,6 +48,12 @@ export default function CheckoutPage() {
       pincode: "",
     },
   });
+
+  useEffect(() => {
+    if (userProfile) {
+        form.setValue('fullName', userProfile.displayName || '');
+    }
+  }, [userProfile, form]);
   
   const {formState: { isSubmitting }} = form;
 
@@ -78,7 +85,7 @@ export default function CheckoutPage() {
             description: `Your order #${result.orderId} has been confirmed.`,
         });
         clearCart();
-        router.push('/');
+        router.push('/profile');
     } else {
         toast({
             variant: 'destructive',

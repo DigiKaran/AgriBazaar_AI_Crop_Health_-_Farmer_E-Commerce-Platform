@@ -1,15 +1,22 @@
-import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, doc, updateDoc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
+
+import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, doc, updateDoc, getDoc, setDoc, deleteDoc, writeBatch } from "firebase/firestore";
 import { db } from "./index";
 import type { DiagnosisHistoryEntry, ChatMessage, UserProfile, UserRole, ProductCategory, Order, OrderBase, DiagnosisResult, Product } from '@/types';
 
 // Helper to convert all Firestore Timestamps in a document to ISO strings
-const serializeDocumentTimestamps = (docData: any) => {
+const serializeDocumentTimestamps = (docData: any): any => {
   if (!docData) return docData;
   const data = { ...docData };
   for (const key in data) {
-    const value = data[key];
-    if (value && typeof value.toDate === 'function') {
-      data[key] = value.toDate().toISOString();
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      const value = data[key];
+      if (value && typeof value.toDate === 'function') {
+        data[key] = value.toDate().toISOString();
+      } else if (Array.isArray(value)) {
+        data[key] = value.map(item => serializeDocumentTimestamps(item));
+      } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        data[key] = serializeDocumentTimestamps(value);
+      }
     }
   }
   return data;
@@ -57,21 +64,14 @@ export const getPendingExpertQueries = async (): Promise<DiagnosisHistoryEntry[]
   try {
     const q = query(
       collection(db, DIAGNOSIS_HISTORY_COLLECTION),
-      where("status", "==", "pending_expert")
+      where("status", "==", "pending_expert"),
+      orderBy("timestamp", "asc")
     );
     const querySnapshot = await getDocs(q);
     const queries: DiagnosisHistoryEntry[] = [];
     querySnapshot.forEach((doc) => {
       queries.push({ id: doc.id, ...serializeDocumentTimestamps(doc.data()) } as DiagnosisHistoryEntry);
     });
-
-    // Sort client-side to avoid needing a composite index
-    queries.sort((a, b) => {
-        const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-        const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-        return timeA - timeB;
-    });
-
     return queries;
   } catch (error: any) {
     console.error("Error fetching pending expert queries from DB: ", error);
@@ -183,7 +183,6 @@ export const getProducts = async (): Promise<Product[]> => {
         const querySnapshot = await getDocs(q);
         const products: Product[] = [];
         querySnapshot.forEach((doc) => {
-            // Filter out the placeholder document
             if (doc.id !== '_placeholder_') {
                 products.push({ id: doc.id, ...doc.data() } as Product);
             }
@@ -195,6 +194,33 @@ export const getProducts = async (): Promise<Product[]> => {
     }
 }
 
+export const addProduct = async (productData: Omit<Product, 'id'>): Promise<string> => {
+    try {
+        const docRef = await addDoc(collection(db, PRODUCTS_COLLECTION), productData);
+        return docRef.id;
+    } catch (error) {
+        throw new Error(`Failed to add product. ${(error as Error).message}`);
+    }
+};
+
+export const updateProduct = async (productId: string, productData: Partial<Product>): Promise<void> => {
+    try {
+        const productRef = doc(db, PRODUCTS_COLLECTION, productId);
+        await updateDoc(productRef, productData);
+    } catch (error) {
+        throw new Error(`Failed to update product. ${(error as Error).message}`);
+    }
+};
+
+export const deleteProduct = async (productId: string): Promise<void> => {
+    try {
+        await deleteDoc(doc(db, PRODUCTS_COLLECTION, productId));
+    } catch (error) {
+        throw new Error(`Failed to delete product. ${(error as Error).message}`);
+    }
+};
+
+
 // Product Categories
 const CATEGORIES_COLLECTION = 'product_categories';
 
@@ -204,7 +230,6 @@ export const getProductCategories = async (): Promise<ProductCategory[]> => {
         const querySnapshot = await getDocs(q);
         const categories: ProductCategory[] = [];
         querySnapshot.forEach((doc) => {
-            // Filter out the placeholder document
             if (doc.id !== '_placeholder_') {
                 categories.push({ id: doc.id, ...doc.data() } as ProductCategory);
             }
@@ -249,4 +274,49 @@ export const saveOrder = async (orderData: OrderBase): Promise<string> => {
     console.error("Error saving order: ", error);
     throw new Error(`Failed to save order. ${error.message || ''}`.trim());
   }
+};
+
+export const getUserOrders = async (userId: string): Promise<Order[]> => {
+    try {
+        const q = query(
+            collection(db, ORDERS_COLLECTION),
+            where("userId", "==", userId),
+            orderBy("createdAt", "desc")
+        );
+        const querySnapshot = await getDocs(q);
+        const orders: Order[] = [];
+        querySnapshot.forEach((doc) => {
+            orders.push({ id: doc.id, ...serializeDocumentTimestamps(doc.data()) } as Order);
+        });
+        return orders;
+    } catch (error) {
+        throw new Error(`Failed to fetch user orders. ${(error as Error).message}`);
+    }
+};
+
+export const getPendingOrders = async (): Promise<Order[]> => {
+    try {
+        const q = query(
+            collection(db, ORDERS_COLLECTION),
+            where("status", "==", "placed"),
+            orderBy("createdAt", "asc")
+        );
+        const querySnapshot = await getDocs(q);
+        const orders: Order[] = [];
+        querySnapshot.forEach((doc) => {
+            orders.push({ id: doc.id, ...serializeDocumentTimestamps(doc.data()) } as Order);
+        });
+        return orders;
+    } catch (error) {
+        throw new Error(`Failed to fetch pending orders. ${(error as Error).message}`);
+    }
+};
+
+export const updateOrderStatus = async (orderId: string, status: Order['status']): Promise<void> => {
+    try {
+        const orderRef = doc(db, ORDERS_COLLECTION, orderId);
+        await updateDoc(orderRef, { status });
+    } catch (error) {
+        throw new Error(`Failed to update order status. ${(error as Error).message}`);
+    }
 };

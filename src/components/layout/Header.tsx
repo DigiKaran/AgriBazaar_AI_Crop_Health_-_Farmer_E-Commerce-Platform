@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Leaf, Globe, Menu, LogOut, LogIn, UserPlus, ShoppingCart, UserCheck } from 'lucide-react';
+import { Leaf, Globe, Menu, LogOut, LogIn, UserPlus, ShoppingCart, User, UserCog } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -96,6 +96,13 @@ export default function Header() {
             </p>
             {userProfile?.role && <p className="text-xs leading-none text-muted-foreground capitalize">Role: {userProfile.role}</p>}
           </div>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/profile">
+            <UserCog className="mr-2 h-4 w-4" />
+            <span>My Profile & Orders</span>
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
@@ -198,6 +205,9 @@ export default function Header() {
                          {userProfile?.role && <p className="text-xs leading-none text-muted-foreground capitalize">Role: {userProfile.role}</p>}
                       </div>
                     </div>
+                     <Button variant="outline" className="w-full" asChild onClick={() => setMobileMenuOpen(false)}>
+                       <Link href="/profile"><UserCog className="mr-2 h-4 w-4" /> My Profile & Orders</Link>
+                    </Button>
                     <Button variant="outline" className="w-full" onClick={() => { handleLogout(); setMobileMenuOpen(false); }}>
                       <LogOut className="mr-2 h-4 w-4" /> Log out
                     </Button>

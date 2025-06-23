@@ -23,7 +23,7 @@ storage = getStorage(app);
 
 // Function to create placeholder documents to ensure collections are visible in Firestore console
 const ensureCollectionsExist = async () => {
-  const collectionsToEnsure = ['orders', 'diagnosis_history'];
+  const collectionsToEnsure = ['orders', 'diagnosis_history', 'chat_messages', 'users', 'products', 'product_categories'];
   const batch = writeBatch(db);
   let writesMade = false;
 
@@ -55,8 +55,7 @@ const ensureCollectionsExist = async () => {
 
 // One-time data seeding function
 const seedDatabase = async () => {
-    const productsCollectionRef = collection(db, 'products');
-    const seedCheckDocRef = doc(productsCollectionRef, 'TRACTOR-001');
+    const seedCheckDocRef = doc(db, 'products', '_seed_check_');
     
     try {
         const seedCheckDocSnap = await getDoc(seedCheckDocRef);
@@ -98,6 +97,9 @@ const seedDatabase = async () => {
             batch.set(productDocRef, productData);
         });
 
+        // Add the seed check document to prevent re-seeding
+        batch.set(seedCheckDocRef, { seeded: true, timestamp: new Date() });
+
         await batch.commit();
         console.log("Database seeded successfully.");
 
@@ -118,7 +120,8 @@ try {
     })
     .catch((err) => {
       if (err.code === 'failed-precondition') {
-        console.warn("Firestore offline persistence failed: Multiple tabs open or other precondition not met. This is usually fine, data will be fetched online.");
+        // This is a normal scenario in a multi-tab environment.
+        // Don't log a warning, just proceed.
       } else if (err.code === 'unimplemented') {
         console.warn("Firestore offline persistence failed: Browser does not support all of the features required. Data will be fetched online.");
       } else {

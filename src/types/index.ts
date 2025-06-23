@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   name: string;
@@ -38,7 +39,7 @@ export type UserRole = 'farmer' | 'admin' | 'expert';
 export interface UserProfile {
   uid: string;
   email: string | null;
-  displayName?: string | null;
+  displayName: string | null;
   photoURL?: string | null;
   createdAt: string | null;
   role: UserRole;
@@ -124,7 +125,7 @@ export interface OrderBase {
     items: CartItem[];
     totalAmount: number;
     shippingAddress: ShippingAddress;
-    status: 'placed' | 'shipped' | 'delivered' | 'cancelled';
+    status: 'placed' | 'approved' | 'shipped' | 'delivered' | 'cancelled';
 }
 
 export interface Order extends OrderBase {

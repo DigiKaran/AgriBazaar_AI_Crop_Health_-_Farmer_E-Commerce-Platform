@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 
 const signupFormSchema = z.object({
+  displayName: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email('Invalid email address.'),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
   confirmPassword: z.string().min(6, 'Password must be at least 6 characters.')
@@ -53,7 +54,7 @@ export default function SignupForm() {
     setIsLoading(true);
     setError(null);
     try {
-      await signUpWithEmailPassword(data.email, data.password);
+      await signUpWithEmailPassword(data.email, data.password, data.displayName);
       toast({
         title: "Account Created",
         description: "Welcome to AgriCheck! You are now logged in.",
@@ -119,6 +120,17 @@ export default function SignupForm() {
       )}
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-6 pt-6">
+          <div className="space-y-2">
+            <Label htmlFor="displayName">Full Name</Label>
+            <Input
+              id="displayName"
+              type="text"
+              placeholder="Your full name"
+              {...register('displayName')}
+              disabled={isLoading || isGoogleLoading}
+            />
+            {errors.displayName && <p className="text-sm text-destructive">{errors.displayName.message}</p>}
+          </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input

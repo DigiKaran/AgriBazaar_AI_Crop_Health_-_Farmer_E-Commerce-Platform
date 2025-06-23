@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { 
     ShieldAlert, LayoutDashboard, Users, MessageSquare, Settings, 
-    FileText, CheckSquare, ShoppingBasket, BookOpen, 
-    Wrench, Database, Megaphone 
+    FileText, Package, ShoppingBasket, BookOpen, 
+    Wrench, Database, ListOrdered 
 } from 'lucide-react';
 import UserManagementTable from './components/UserManagementTable';
 import AdminStatsCards from './components/AdminStatsCards';
@@ -75,13 +75,18 @@ export default function AdminPage() {
         <Card className="shadow-lg rounded-xl">
           <CardHeader>
             <CardTitle className="text-xl flex items-center gap-2"><ShoppingBasket className="h-6 w-6 text-primary"/>Marketplace</CardTitle>
-             <CardDescription>Manage product listings, categories, and marketplace settings.</CardDescription>
+             <CardDescription>Manage products, categories, and orders.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Button variant="outline" asChild>
+                  <Link href="/admin/marketplace/products"><Package className="mr-2 h-5 w-5"/>Manage Products</Link>
+              </Button>
+              <Button variant="outline" asChild>
                   <Link href="/admin/marketplace/categories"><Settings className="mr-2 h-5 w-5"/>Manage Categories</Link>
               </Button>
-              <Button variant="outline" disabled><CheckSquare className="mr-2 h-5 w-5"/>Approve Products</Button>
+               <Button variant="outline" asChild>
+                  <Link href="/admin/marketplace/orders"><ListOrdered className="mr-2 h-5 w-5"/>Approve Orders</Link>
+              </Button>
           </CardContent>
         </Card>
          <Card className="shadow-lg rounded-xl">
@@ -103,7 +108,6 @@ export default function AdminPage() {
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Button variant="outline" disabled><Database className="mr-2 h-5 w-5"/>Manage Seed Data</Button>
-              <Button variant="outline" disabled><Megaphone className="mr-2 h-5 w-5"/>System Settings</Button>
           </CardContent>
         </Card>
       </div>

@@ -3,20 +3,22 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  updateProfile,
   type UserCredential,
   type User as FirebaseUser,
   GoogleAuthProvider,
   signInWithPopup
 } from "firebase/auth";
 import { auth, db } from "./index";
-import { doc, setDoc, serverTimestamp, getDoc, collection, query, getDocs, limit } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, getDoc, collection, query, getDocs, limit, updateDoc } from "firebase/firestore";
 import type { UserProfile } from '@/types';
 
-export const signUpWithEmailPassword = async (email: string, password: string): Promise<UserCredential> => {
+export const signUpWithEmailPassword = async (email: string, password: string, displayName: string): Promise<UserCredential> => {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-  if (userCredential.user) {
-    await createUserProfileDocument(userCredential.user);
-  }
+  // Update the Firebase Auth user's profile first
+  await updateProfile(userCredential.user, { displayName });
+  // Then create our own user document in Firestore
+  await createUserProfileDocument(userCredential.user);
   return userCredential;
 };
 
@@ -44,7 +46,7 @@ export const signOutUser = async (): Promise<void> => {
   return signOut(auth);
 };
 
-export const createUserProfileDocument = async (user: FirebaseUser, additionalData?: Partial<UserProfile>) => {
+export const createUserProfileDocument = async (user: FirebaseUser) => {
   if (!user) return;
 
   const userRef = doc(db, `users/${user.uid}`);
@@ -70,21 +72,27 @@ export const createUserProfileDocument = async (user: FirebaseUser, additionalDa
         createdAt,
         role, // Use the determined role
         status: 'active',
-        ...additionalData,
       });
     } catch (error) {
       console.error("Error creating user document", error);
       throw error;
     }
   } else {
-    // If user exists, update their photoURL if it's different and provided (e.g. from Google)
+    // If user exists, update their photoURL and displayName if it's different (e.g. from Google)
     const existingData = snapshot.data() as UserProfile;
+    const updates: Partial<UserProfile> = {};
     if (user.photoURL && existingData.photoURL !== user.photoURL) {
-      try {
-        await setDoc(userRef, { photoURL: user.photoURL }, { merge: true });
-      } catch (error) {
-        console.error("Error updating user photoURL", error);
-      }
+      updates.photoURL = user.photoURL;
+    }
+    if (user.displayName && existingData.displayName !== user.displayName) {
+        updates.displayName = user.displayName;
+    }
+    if (Object.keys(updates).length > 0) {
+        try {
+            await updateDoc(userRef, updates);
+        } catch (error) {
+            console.error("Error updating user profile on sign-in", error);
+        }
     }
   }
   return userRef;
@@ -95,15 +103,24 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
   const snapshot = await getDoc(userRef);
   if (snapshot.exists()) {
     const data = snapshot.data();
-    const createdAtTimestamp = data.createdAt;
-
-    const profile: UserProfile = {
-      role: 'farmer',
-      status: 'active',
-      ...data,
-      createdAt: createdAtTimestamp && createdAtTimestamp.toDate ? createdAtTimestamp.toDate().toISOString() : null,
-    } as UserProfile;
-    return profile;
+    // Convert Firestore Timestamp to ISO string for client-side compatibility
+    const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null;
+    return { ...data, uid, createdAt } as UserProfile;
   }
   return null;
+};
+
+// Function to update user profile info in both Auth and Firestore
+export const updateUserProfileInfo = async (userId: string, updates: { displayName?: string; photoURL?: string }) => {
+    const user = auth.currentUser;
+    if (!user || user.uid !== userId) {
+        throw new Error("User not authenticated or mismatched ID.");
+    }
+
+    // Update Firebase Authentication profile
+    await updateProfile(user, updates);
+
+    // Update Firestore user document
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, updates);
 };
