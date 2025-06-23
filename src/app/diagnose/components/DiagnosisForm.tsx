@@ -14,11 +14,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, UploadCloud, AlertTriangle, CheckCircle2, Brain, ShieldCheck } from 'lucide-react';
 import type { DiagnosisResult, PreventativeMeasuresResult } from '@/types';
 import { diagnoseCropAction, generatePreventativeMeasuresAction } from '@/lib/actions';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 const diagnosisFormSchema = z.object({
@@ -27,11 +28,11 @@ const diagnosisFormSchema = z.object({
   cropType: z.string().optional(), // For preventative measures
   season: z.string().optional(), // For preventative measures
   location: z.string().optional(), // For preventative measures
+  model: z.string().min(1, "Please select an AI model."),
 });
 
 type DiagnosisFormValues = z.infer<typeof diagnosisFormSchema>;
 
-// This state now only holds the direct result from the AI
 interface DiagnosisState extends DiagnosisResult {}
 
 const fileToDataUri = (file: File): Promise<string> => {
@@ -42,6 +43,12 @@ const fileToDataUri = (file: File): Promise<string> => {
     reader.readAsDataURL(file);
   });
 };
+
+const availableModels = [
+    { id: 'googleai/gemini-1.5-flash-latest', name: 'Gemini 1.5 Flash (Recommended)' },
+    { id: 'googleai/gemini-pro-vision', name: 'Gemini Pro Vision (Alternative)' },
+    { id: 'googleai/gemini-2.0-flash', name: 'Gemini 2.0 Flash (Experimental)' },
+];
 
 export default function DiagnosisForm() {
   const [diagnosis, setDiagnosis] = useState<DiagnosisState | null>(null);
@@ -59,7 +66,8 @@ export default function DiagnosisForm() {
       description: "",
       cropType: "Unknown Crop", 
       season: "Current Season", 
-      location: "Local Area" 
+      location: "Local Area",
+      model: 'googleai/gemini-1.5-flash-latest',
     },
   });
 
@@ -101,7 +109,11 @@ export default function DiagnosisForm() {
       const file = data.image[0];
       const photoDataUri = await fileToDataUri(file);
       
-      const result = await diagnoseCropAction({ photoDataUri, description: data.description });
+      const result = await diagnoseCropAction({ 
+          photoDataUri, 
+          description: data.description,
+          model: data.model 
+      });
 
       if (result.error) {
         setError(result.error);
@@ -200,6 +212,35 @@ export default function DiagnosisForm() {
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="model"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>AI Model</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingDiagnosis}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a model for diagnosis" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {availableModels.map((model) => (
+                          <SelectItem key={model.id} value={model.id}>
+                            {model.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Different models may have varying performance and speed. 'Flash' is generally faster.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
             </CardContent>
             <CardFooter>
               <Button type="submit" disabled={isLoadingDiagnosis} className="w-full">

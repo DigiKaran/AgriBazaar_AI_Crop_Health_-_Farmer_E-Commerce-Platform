@@ -19,6 +19,7 @@ const DiagnoseCropDiseaseInputSchema = z.object({
       "A photo of a crop, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
   description: z.string().describe('The description of the crop, including any observed symptoms and the region in India if known.'),
+  model: z.string().describe('The AI model to use for diagnosis.'),
 });
 export type DiagnoseCropDiseaseInput = z.infer<typeof DiagnoseCropDiseaseInputSchema>;
 
@@ -41,7 +42,6 @@ const prompt = ai.definePrompt({
   name: 'diagnoseCropDiseasePrompt',
   input: {schema: DiagnoseCropDiseaseInputSchema},
   output: {schema: DiagnoseCropDiseaseOutputSchema},
-  model: 'googleai/gemini-1.5-flash-latest', // Use a more stable model
   prompt: `You are a highly accurate expert agricultural botanist specializing in diagnosing crop diseases common in India, with a target accuracy of 90% or higher. Analyze the following information and provide a precise diagnosis.
 Your diagnosis should include the disease name, your confidence level (a number between 0 and 1), and detailed treatment recommendations suitable for Indian farming conditions.
 Consider common Indian crops like rice, wheat, cotton, sugarcane, pulses, etc.
@@ -59,7 +59,7 @@ const diagnoseCropDiseaseFlow = ai.defineFlow(
     outputSchema: DiagnoseCropDiseaseOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await prompt(input, { model: ai.model(input.model) });
     return output!;
   }
 );
