@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -9,15 +10,15 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // CRITICAL FIX: The exists() check prevents errors if the rule is checked before the user's
-      // profile document has been created, which resolves the race condition.
+      // Checks if the requesting user has the 'admin' role in their user document.
+      // The exists() check is a safeguard against errors if the doc hasn't been created yet.
       return request.auth != null &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     function isExpert() {
-      // CRITICAL FIX: The exists() check is also added here for robustness.
+      // Checks if the requesting user has the 'expert' role in their user document.
       return request.auth != null &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'expert';
@@ -27,38 +28,41 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isAdmin() || isExpert() || isUser(userId);
       allow create: if isUser(userId);
-      allow update: if isAdmin() || (isUser(userId) && request.resource.data.role == resource.data.role);
+      allow update: if isAdmin() || (isUser(userId) && request.resource.data.role == resource.data.role && request.resource.data.status == resource.data.status);
       allow delete: if isAdmin();
     }
     match /users {
       allow list: if isAdmin();
     }
 
-    // --- Rules for 'products' and 'product_categories' ---
-    match /{collection}/{docId} where collection in ['products', 'product_categories'] {
-      allow read: if true;
+    // --- CORRECTED: Rules for 'products' collection ---
+    match /products/{productId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    // --- CORRECTED: Rules for 'product_categories' collection ---
+    match /product_categories/{categoryId} {
+      allow get, list: if true;
       allow write: if isAdmin();
     }
 
     // --- Rules for 'diagnosis_history' collection ---
     match /diagnosis_history/{docId} {
       allow create: if isUser(request.resource.data.userId);
-      allow read: if isAdmin() || isExpert() || isUser(resource.data.userId);
+      allow get: if isAdmin() || isExpert() || isUser(resource.data.userId);
       allow update: if isAdmin() || isExpert() || isUser(resource.data.userId);
       allow delete: if isAdmin() || isUser(resource.data.userId);
     }
     match /diagnosis_history {
-        // Allows admins/experts to query the whole collection.
-        // Users can only query if they filter by their own userId.
-       allow list: if isAdmin() || isExpert();
+      allow list: if isAdmin() || isExpert() || (request.auth != null && request.query.where.userId == request.auth.uid);
     }
-
 
     // --- Rules for 'chat_messages' collection ---
     match /chat_messages/{docId} {
-      allow read, create: if isUser(request.resource.data.userId);
+      allow read, create: if isUser(resource.data.userId);
     }
-     match /chat_messages {
+    match /chat_messages {
         allow list: if request.auth != null && request.query.where.userId == request.auth.uid;
     }
 
@@ -69,7 +73,7 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
     match /orders {
-      allow list: if isAdmin();
+        allow list: if isAdmin() || (request.auth != null && request.query.where.userId == request.auth.uid);
     }
   }
 }
