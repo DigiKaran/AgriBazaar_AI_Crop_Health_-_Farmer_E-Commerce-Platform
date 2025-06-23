@@ -13,6 +13,8 @@ import { saveChatMessageAction, getAgriBotResponseAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { ChatMessageHistory } from '@/types';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 
 interface Message {
@@ -145,7 +147,7 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-full max-h-[70vh] w-full bg-card border rounded-xl shadow-xl overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-card border rounded-xl shadow-xl overflow-hidden">
       {!currentUser && (
          <Alert variant="destructive" className="m-4 rounded-md">
             <AlertTriangle className="h-4 w-4" />
@@ -155,54 +157,65 @@ export default function ChatInterface() {
             </AlertDescription>
           </Alert>
       )}
-      <ScrollArea className="flex-grow p-4 sm:p-6 space-y-4" ref={scrollAreaRef}>
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={cn(
-              "flex items-end gap-2 max-w-[85%] sm:max-w-[75%]",
-              msg.sender === 'user' ? 'ml-auto flex-row-reverse' : 'mr-auto'
-            )}
-          >
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={msg.sender === 'user' ? currentUser?.photoURL || undefined : "https://placehold.co/40x40.png?text=AI"} />
-              <AvatarFallback className={cn(msg.sender === 'bot' ? 'bg-primary text-primary-foreground' : 'bg-accent text-accent-foreground')}>
-                {msg.sender === 'user' ? <User size={18}/> : <Bot size={18}/>}
-              </AvatarFallback>
-            </Avatar>
+      <ScrollArea className="flex-grow p-4 sm:p-6" ref={scrollAreaRef}>
+        <div className="space-y-4">
+          {messages.map((msg) => (
             <div
+              key={msg.id}
               className={cn(
-                "rounded-lg px-3 py-2 text-sm shadow",
-                msg.sender === 'user'
-                  ? 'bg-primary text-primary-foreground rounded-br-none'
-                  : 'bg-secondary text-secondary-foreground rounded-bl-none'
+                "flex items-end gap-2 max-w-[85%] sm:max-w-[75%]",
+                msg.sender === 'user' ? 'ml-auto flex-row-reverse' : 'mr-auto'
               )}
             >
-              <p className="whitespace-pre-wrap">{msg.text}</p>
-              <p className={cn(
-                  "text-xs mt-1",
-                  msg.sender === 'user' ? 'text-primary-foreground/70 text-right' : 'text-secondary-foreground/70 text-left'
-              )}>
-                {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </p>
-            </div>
-          </div>
-        ))}
-        {isLoading && (
-          <div className="flex items-end gap-2 max-w-[75%] mr-auto">
-            <Avatar className="h-8 w-8">
-               <AvatarImage src="https://placehold.co/40x40.png?text=AI" />
-               <AvatarFallback className='bg-primary text-primary-foreground'><Bot size={18}/></AvatarFallback>
-            </Avatar>
-            <div className="rounded-lg px-3 py-2 text-sm shadow bg-secondary text-secondary-foreground rounded-bl-none">
-              <div className="flex space-x-1">
-                <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce"></span>
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={msg.sender === 'user' ? currentUser?.photoURL || undefined : "https://placehold.co/40x40.png?text=AI"} />
+                <AvatarFallback className={cn(msg.sender === 'bot' ? 'bg-primary text-primary-foreground' : 'bg-accent text-accent-foreground')}>
+                  {msg.sender === 'user' ? <User size={18}/> : <Bot size={18}/>}
+                </AvatarFallback>
+              </Avatar>
+              <div
+                className={cn(
+                  "rounded-lg px-3 py-2 text-sm shadow",
+                  msg.sender === 'user'
+                    ? 'bg-primary text-primary-foreground rounded-br-none'
+                    : 'bg-secondary text-secondary-foreground rounded-bl-none'
+                )}
+              >
+                {msg.sender === 'bot' ? (
+                  <ReactMarkdown 
+                    className="chat-prose"
+                    remarkPlugins={[remarkGfm]}
+                  >
+                    {msg.text}
+                  </ReactMarkdown>
+                ) : (
+                  <p className="whitespace-pre-wrap">{msg.text}</p>
+                )}
+                <p className={cn(
+                    "text-xs mt-1",
+                    msg.sender === 'user' ? 'text-primary-foreground/70 text-right' : 'text-secondary-foreground/70 text-left'
+                )}>
+                  {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </p>
               </div>
             </div>
-          </div>
-        )}
+          ))}
+          {isLoading && (
+            <div className="flex items-end gap-2 max-w-[75%] mr-auto">
+              <Avatar className="h-8 w-8">
+                 <AvatarImage src="https://placehold.co/40x40.png?text=AI" />
+                 <AvatarFallback className='bg-primary text-primary-foreground'><Bot size={18}/></AvatarFallback>
+              </Avatar>
+              <div className="rounded-lg px-3 py-2 text-sm shadow bg-secondary text-secondary-foreground rounded-bl-none">
+                <div className="flex space-x-1">
+                  <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                  <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                  <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce"></span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </ScrollArea>
       <form onSubmit={handleSubmit} className="flex items-center gap-2 border-t p-4 bg-background">
         <Input

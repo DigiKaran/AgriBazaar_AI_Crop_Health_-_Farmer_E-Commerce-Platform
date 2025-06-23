@@ -97,3 +97,22 @@ body {
     @apply font-headline;
   }
 }
+
+@layer components {
+  /* Custom prose styles for chat bubbles to inherit chat bubble text color */
+  .chat-prose {
+    @apply prose prose-sm max-w-none text-inherit;
+  }
+  .chat-prose h1, .chat-prose h2, .chat-prose h3, .chat-prose h4, .chat-prose h5, .chat-prose h6, .chat-prose strong, .chat-prose p, .chat-prose ol, .chat-prose ul {
+    @apply text-inherit;
+  }
+  .chat-prose ul > li::marker {
+    @apply text-inherit opacity-70;
+  }
+   .chat-prose a {
+    @apply text-inherit underline hover:opacity-80;
+  }
+  .chat-prose code {
+    @apply text-inherit;
+  }
+}
