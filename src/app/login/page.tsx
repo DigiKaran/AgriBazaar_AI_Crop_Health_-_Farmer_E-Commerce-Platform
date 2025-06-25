@@ -4,8 +4,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Login - AgriCheck',
-  description: 'Login to your AgriCheck account.',
+  title: 'Login - AgriBazaar',
+  description: 'Login to your AgriBazaar account.',
 };
 
 export default function LoginPage() {
@@ -14,7 +14,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8">
         <div>
           <h1 className="text-center text-3xl font-headline tracking-tight">
-            Login to AgriCheck
+            Login to AgriBazaar
           </h1>
           <p className="mt-2 text-center text-sm text-muted-foreground">
             Or{' '}

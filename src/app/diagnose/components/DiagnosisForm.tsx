@@ -45,9 +45,9 @@ const fileToDataUri = (file: File): Promise<string> => {
 };
 
 const availableModels = [
-    { id: 'googleai/gemini-1.5-flash-latest', name: 'AgriCheck Flash (Recommended)' },
-    { id: 'googleai/gemini-pro-vision', name: 'AgriCheck Pro Vision (Alternative)' },
-    { id: 'googleai/gemini-2.0-flash', name: 'AgriCheck Experimental Flash' },
+    { id: 'googleai/gemini-1.5-flash-latest', name: 'AgriBazaar Flash (Recommended)' },
+    { id: 'googleai/gemini-pro-vision', name: 'AgriBazaar Pro Vision (Alternative)' },
+    { id: 'googleai/gemini-2.0-flash', name: 'AgriBazaar Experimental Flash' },
 ];
 
 export default function DiagnosisForm() {

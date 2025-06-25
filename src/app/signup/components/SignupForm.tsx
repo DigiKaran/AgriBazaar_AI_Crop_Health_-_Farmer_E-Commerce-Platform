@@ -57,7 +57,7 @@ export default function SignupForm() {
       await signUpWithEmailPassword(data.email, data.password, data.displayName);
       toast({
         title: "Account Created",
-        description: "Welcome to AgriCheck! You are now logged in.",
+        description: "Welcome to AgriBazaar! You are now logged in.",
       });
       router.push('/'); 
     } catch (err: any) {
@@ -79,7 +79,7 @@ export default function SignupForm() {
       await signInWithGoogle(); // Same function for sign-in and sign-up
       toast({
         title: "Google Sign-Up Successful",
-        description: "Welcome to AgriCheck!",
+        description: "Welcome to AgriBazaar!",
       });
       router.push('/');
     } catch (err: any) {

@@ -25,7 +25,7 @@ const navItems = [
 const Logo = () => (
   <Link href="/" className="flex items-center gap-2 text-2xl font-headline text-primary hover:text-primary/80 transition-colors">
     <Leaf className="h-7 w-7" />
-    AgriCheck
+    AgriBazaar
   </Link>
 );
 

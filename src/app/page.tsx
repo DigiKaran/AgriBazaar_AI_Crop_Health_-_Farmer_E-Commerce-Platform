@@ -44,7 +44,7 @@ export default function HomePage() {
           <div className="flex flex-col items-center space-y-6">
             <Leaf className="h-20 w-20 text-primary" />
             <h1 className="text-4xl font-headline tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl text-foreground">
-              Welcome to AgriCheck
+              Welcome to AgriBazaar
             </h1>
             <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
               Your AI-powered assistant for healthier crops and smarter farming. Detect diseases, shop for essentials, and get expert advice, all in one place.
@@ -96,7 +96,7 @@ export default function HomePage() {
               Ready to Transform Your Farming?
             </h2>
             <p className="text-muted-foreground md:text-lg mb-8">
-              Join thousands of farmers who are using AgriCheck to improve crop health and boost productivity.
+              Join thousands of farmers who are using AgriBazaar to improve crop health and boost productivity.
             </p>
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
                 <Image src="https://placehold.co/600x400.png" alt="Happy Farmer" width={600} height={400} className="rounded-lg shadow-md" data-ai-hint="farm harvest" />

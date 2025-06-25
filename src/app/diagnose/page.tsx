@@ -2,7 +2,7 @@ import DiagnosisForm from './components/DiagnosisForm';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Crop Disease Diagnosis - AgriCheck',
+  title: 'Crop Disease Diagnosis - AgriBazaar',
   description: 'Upload an image of your crop to get an AI-powered diagnosis and treatment recommendations.',
 };
 

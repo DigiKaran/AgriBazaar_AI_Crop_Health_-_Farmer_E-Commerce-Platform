@@ -8,7 +8,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
 
 export const metadata: Metadata = {
-  title: 'AgriCheck - AI Crop Health & E-Commerce',
+  title: 'AgriBazaar - AI Crop Health & E-Commerce',
   description: 'AI-Powered Crop Disease Detection & Farmer E-Commerce Platform',
 };
 

@@ -108,7 +108,7 @@ export default function UserManagementTable({ adminUserId }: UserManagementTable
   return (
     <div className="overflow-x-auto">
       <Table>
-        <TableCaption>A list of all registered users in the AgriCheck system.</TableCaption>
+        <TableCaption>A list of all registered users in the AgriBazaar system.</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead>User</TableHead>

@@ -34,7 +34,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
   // Load cart from localStorage on initial render
   useEffect(() => {
-    const storedCart = localStorage.getItem('agriCheckCart');
+    const storedCart = localStorage.getItem('agriBazaarCart');
     if (storedCart) {
       setCartItems(JSON.parse(storedCart));
     }
@@ -42,7 +42,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('agriCheckCart', JSON.stringify(cartItems));
+    localStorage.setItem('agriBazaarCart', JSON.stringify(cartItems));
   }, [cartItems]);
 
   const addToCart = (product: Product) => {

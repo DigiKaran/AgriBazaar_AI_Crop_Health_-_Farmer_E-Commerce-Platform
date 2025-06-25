@@ -4,8 +4,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Sign Up - AgriCheck',
-  description: 'Create a new AgriCheck account.',
+  title: 'Sign Up - AgriBazaar',
+  description: 'Create a new AgriBazaar account.',
 };
 
 export default function SignupPage() {
@@ -14,7 +14,7 @@ export default function SignupPage() {
       <div className="w-full max-w-md space-y-8">
         <div>
           <h1 className="text-center text-3xl font-headline tracking-tight">
-            Create your AgriCheck Account
+            Create your AgriBazaar Account
           </h1>
           <p className="mt-2 text-center text-sm text-muted-foreground">
             Already have an account?{' '}
