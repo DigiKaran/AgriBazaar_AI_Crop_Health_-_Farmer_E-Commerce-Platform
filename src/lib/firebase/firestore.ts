@@ -68,8 +68,7 @@ export const getPendingExpertQueries = async (): Promise<DiagnosisHistoryEntry[]
   try {
     const q = query(
       collection(db, DIAGNOSIS_HISTORY_COLLECTION),
-      where("status", "==", "pending_expert"),
-      orderBy("timestamp", "asc")
+      where("status", "==", "pending_expert")
     );
     const querySnapshot = await getDocs(q);
     const queries: DiagnosisHistoryEntry[] = [];
@@ -294,8 +293,7 @@ export const getUserOrders = async (userId: string): Promise<Order[]> => {
     try {
         const q = query(
             collection(db, ORDERS_COLLECTION),
-            where("userId", "==", userId),
-            orderBy("createdAt", "desc")
+            where("userId", "==", userId)
         );
         const querySnapshot = await getDocs(q);
         const orders: Order[] = [];

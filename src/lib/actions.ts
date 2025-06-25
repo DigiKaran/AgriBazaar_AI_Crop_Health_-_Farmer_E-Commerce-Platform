@@ -168,6 +168,12 @@ export async function updateUserProfileAction(
 export async function getUserOrdersAction(userId: string): Promise<{ orders?: Order[]; error?: string }> {
     try {
         const orders = await getUserOrdersFromDb(userId);
+        // Sort orders by date in descending order (newest first)
+        orders.sort((a, b) => {
+            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return dateB - dateA;
+        });
         return { orders };
     } catch (error: any) {
         return { error: `Failed to fetch order history. ${error.message || ''}`.trim() };
@@ -209,6 +215,12 @@ export async function updateUserByAdminAction(
 export async function fetchPendingExpertQueriesAction(): Promise<{ queries?: DiagnosisHistoryEntry[]; error?: string }> {
   try {
     const queries = await getPendingExpertQueriesFromDb();
+    // Sort queries by date in ascending order (oldest first)
+    queries.sort((a, b) => {
+        const dateA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const dateB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return dateA - dateB;
+    });
     return { queries };
   } catch (error: any) {
     console.error('Error in fetchPendingExpertQueriesAction:', error);
