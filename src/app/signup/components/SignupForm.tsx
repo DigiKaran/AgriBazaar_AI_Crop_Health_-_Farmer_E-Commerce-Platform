@@ -16,6 +16,7 @@ import { signUpWithEmailPassword, signInWithGoogle } from '@/lib/firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { LeafLoader } from '@/components/ui/leaf-loader';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const signupFormSchema = z.object({
   displayName: z.string().min(2, "Name must be at least 2 characters."),
@@ -41,6 +42,7 @@ const GoogleIcon = () => (
 );
 
 export default function SignupForm() {
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,15 +59,15 @@ export default function SignupForm() {
     try {
       await signUpWithEmailPassword(data.email, data.password, data.displayName);
       toast({
-        title: "Account Created",
-        description: "Welcome to AgriBazaar! You are now logged in.",
+        title: t('signup.toast.successTitle'),
+        description: t('signup.toast.successDescription'),
       });
       router.push('/'); 
     } catch (err: any) {
       setError(err.message || 'Failed to create account. Please try again.');
       toast({
         variant: "destructive",
-        title: "Signup Failed",
+        title: t('signup.toast.failTitle'),
         description: err.message || 'An error occurred. Please try again.',
       });
     } finally {
@@ -79,8 +81,8 @@ export default function SignupForm() {
     try {
       await signInWithGoogle(); // Same function for sign-in and sign-up
       toast({
-        title: "Google Sign-Up Successful",
-        description: "Welcome to AgriBazaar!",
+        title: t('signup.toast.googleSuccessTitle'),
+        description: t('signup.toast.googleSuccessDescription'),
       });
       router.push('/');
     } catch (err: any) {
@@ -88,14 +90,14 @@ export default function SignupForm() {
         setError('Google Sign-Up cancelled.');
          toast({
           variant: "default",
-          title: "Sign-Up Cancelled",
-          description: "You closed the Google Sign-Up window.",
+          title: t('signup.toast.googleCancelTitle'),
+          description: t('signup.toast.googleCancelDescription'),
         });
       } else {
         setError(err.message || 'Failed to sign up with Google. Please try again.');
         toast({
           variant: "destructive",
-          title: "Google Sign-Up Failed",
+          title: t('signup.toast.googleFailTitle'),
           description: err.message || 'An unexpected error occurred.',
         });
       }
@@ -107,14 +109,14 @@ export default function SignupForm() {
   return (
     <Card className="shadow-xl rounded-xl">
       <CardHeader>
-        <CardTitle className="text-2xl">Get Started</CardTitle>
-        <CardDescription>Create an account with email or Google.</CardDescription>
+        <CardTitle className="text-2xl">{t('signup.form.title')}</CardTitle>
+        <CardDescription>{t('signup.form.description')}</CardDescription>
       </CardHeader>
       {error && (
          <div className="px-6 pb-0">
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Signup Error</AlertTitle>
+              <AlertTitle>{t('signup.toast.failTitle')}</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
         </div>
@@ -122,44 +124,44 @@ export default function SignupForm() {
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-6 pt-6">
           <div className="space-y-2">
-            <Label htmlFor="displayName">Full Name</Label>
+            <Label htmlFor="displayName">{t('signup.form.nameLabel')}</Label>
             <Input
               id="displayName"
               type="text"
-              placeholder="Your full name"
+              placeholder={t('signup.form.namePlaceholder')}
               {...register('displayName')}
               disabled={isLoading || isGoogleLoading}
             />
             {errors.displayName && <p className="text-sm text-destructive">{errors.displayName.message}</p>}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('login.form.emailLabel')}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder={t('login.form.emailPlaceholder')}
               {...register('email')}
               disabled={isLoading || isGoogleLoading}
             />
             {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('login.form.passwordLabel')}</Label>
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
+              placeholder={t('login.form.passwordPlaceholder')}
               {...register('password')}
               disabled={isLoading || isGoogleLoading}
             />
             {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword">{t('signup.form.confirmPasswordLabel')}</Label>
             <Input
               id="confirmPassword"
               type="password"
-              placeholder="••••••••"
+              placeholder={t('login.form.passwordPlaceholder')}
               {...register('confirmPassword')}
               disabled={isLoading || isGoogleLoading}
             />
@@ -167,7 +169,7 @@ export default function SignupForm() {
           </div>
           <Button type="submit" disabled={isLoading || isGoogleLoading} className="w-full">
             {isLoading ? <LeafLoader size={16} className="mr-2" /> : <UserPlus className="mr-2 h-4 w-4" />}
-            Create Account with Email
+            {t('signup.form.createButton')}
           </Button>
         </CardContent>
       </form>
@@ -178,13 +180,13 @@ export default function SignupForm() {
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-card px-2 text-muted-foreground">
-              Or sign up with
+              {t('signup.form.orSignUpWith')}
             </span>
           </div>
         </div>
         <Button variant="outline" onClick={handleGoogleSignUp} disabled={isLoading || isGoogleLoading} className="w-full">
           {isGoogleLoading ? <LeafLoader size={16} className="mr-2" /> : <GoogleIcon />}
-          Sign up with Google
+          {t('signup.form.googleButton')}
         </Button>
       </div>
     </Card>

@@ -1,3 +1,4 @@
+
 {
   "header.home": "होम",
   "header.aiDiagnose": "एआई निदान",
@@ -59,6 +60,8 @@
   "login.toast.successTitle": "लॉगिन सफल",
   "login.toast.successDescription": "वापसी पर स्वागत है!",
   "login.toast.failTitle": "लॉगिन विफल",
+  "login.toast.googleSuccessTitle": "Google साइन-इन सफल",
+  "login.toast.googleSuccessDescription": "आपका स्वागत है!",
   "login.toast.googleFailTitle": "Google साइन-इन विफल",
   "login.toast.googleCancelTitle": "साइन-इन रद्द",
   "login.toast.googleCancelDescription": "आपने Google साइन-इन विंडो बंद कर दी है।",
@@ -78,6 +81,8 @@
   "signup.toast.successTitle": "खाता बन गया",
   "signup.toast.successDescription": "एग्रीबाजार में आपका स्वागत है! अब आप लॉग इन हैं।",
   "signup.toast.failTitle": "साइनअप विफल",
+  "signup.toast.googleSuccessTitle": "Google साइन-अप सफल",
+  "signup.toast.googleSuccessDescription": "एग्रीबाजार में आपका स्वागत है!",
   "signup.toast.googleFailTitle": "Google साइन-अप विफल",
   "signup.toast.googleCancelTitle": "साइन-अप रद्द",
   "signup.toast.googleCancelDescription": "आपने Google साइन-अप विंडो बंद कर दी है।",
