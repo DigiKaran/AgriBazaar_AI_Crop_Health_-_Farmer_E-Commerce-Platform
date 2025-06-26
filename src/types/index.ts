@@ -132,3 +132,13 @@ export interface Order extends OrderBase {
     id: string; // Firestore Document ID
     createdAt: string | null;
 }
+
+export interface AgriBotChatInput {
+  message: string;
+  history: ChatMessageHistory[];
+  language?: 'en' | 'mr';
+}
+
+export interface AgriBotChatOutput {
+  response: string;
+}

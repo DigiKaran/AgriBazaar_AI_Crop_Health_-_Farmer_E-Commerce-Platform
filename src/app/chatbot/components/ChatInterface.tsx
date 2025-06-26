@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, User, Bot, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { saveChatMessageAction, getAgriBotResponseAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -32,6 +33,7 @@ export default function ChatInterface() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { currentUser } = useAuth();
   const { toast } = useToast();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     // Generate a session ID when the component mounts or when the user logs in/out
@@ -58,12 +60,12 @@ export default function ChatInterface() {
     setMessages([
       { 
         id: Date.now().toString(), 
-        text: "Namaste! I'm AgriBot, your AI farming assistant for India. How can I help you today?", 
+        text: t('chatbot.initialMessage'), 
         sender: 'bot',
         timestamp: new Date()
       }
     ]);
-  }, []);
+  }, [t]);
 
   const handleSaveMessage = async (message: Omit<Message, 'id' | 'timestamp'>) => {
     if (!currentUser || !sessionId) {
@@ -122,6 +124,7 @@ export default function ChatInterface() {
     const result = await getAgriBotResponseAction({
         message: userMessage.text,
         history: chatHistory.slice(0, -1), // Send history excluding the latest user message
+        language: language,
     });
 
     let botResponseText = "I'm sorry, I encountered an error. Please try again later.";
@@ -151,9 +154,9 @@ export default function ChatInterface() {
       {!currentUser && (
          <Alert variant="destructive" className="m-4 rounded-md">
             <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Login to Chat</AlertTitle>
+            <AlertTitle>{t('chatbot.loginToChat')}</AlertTitle>
             <AlertDescription>
-              Please log in to save your chat history and get personalized assistance.
+              {t('chatbot.loginToChatDescription')}
             </AlertDescription>
           </Alert>
       )}
@@ -227,7 +230,7 @@ export default function ChatInterface() {
       <form onSubmit={handleSubmit} className="flex items-center gap-2 border-t p-4 bg-background">
         <Input
           type="text"
-          placeholder={currentUser ? "Type your message..." : "Please log in to chat"}
+          placeholder={currentUser ? t('chatbot.inputPlaceholder') : t('chatbot.inputPlaceholderLoggedOut')}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           className="flex-grow"
@@ -235,7 +238,7 @@ export default function ChatInterface() {
         />
         <Button type="submit" size="icon" disabled={isLoading || !inputValue.trim() || !currentUser} className="bg-accent hover:bg-accent/90 text-accent-foreground">
           <Send className="h-5 w-5" />
-          <span className="sr-only">Send message</span>
+          <span className="sr-only">{t('chatbot.send')}</span>
         </Button>
       </form>
     </div>

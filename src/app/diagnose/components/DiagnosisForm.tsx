@@ -17,6 +17,7 @@ import { diagnoseCropAction, generatePreventativeMeasuresAction } from '@/lib/ac
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -60,6 +61,7 @@ export default function DiagnosisForm() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const { currentUser } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const form = useForm<DiagnosisFormValues>({
     resolver: zodResolver(diagnosisFormSchema),
@@ -101,8 +103,8 @@ export default function DiagnosisForm() {
     if (!currentUser) {
         toast({
             variant: "destructive",
-            title: "Login Recommended",
-            description: "Please log in to save diagnosis results to your history.",
+            title: t('diagnose.toast.loginRecommendedTitle'),
+            description: t('diagnose.toast.loginRecommendedDescription'),
         });
     }
 
@@ -121,8 +123,8 @@ export default function DiagnosisForm() {
       } else if (result.diagnosis) {
         setDiagnosis(result.diagnosis);
         toast({
-            title: "Diagnosis Successful",
-            description: `Identified: ${result.diagnosis.disease}. This result is not saved to history.`,
+            title: t('diagnose.toast.successTitle'),
+            description: t('diagnose.toast.successDescription', { disease: result.diagnosis.disease }),
             action: <CheckCircle2 className="text-green-500" />,
         });
         if (result.diagnosis.disease && !result.diagnosis.disease.toLowerCase().includes("unknown")) {
@@ -155,7 +157,7 @@ export default function DiagnosisForm() {
          toast({ variant: "destructive", title: "Failed", description: result.error });
       } else {
         setPreventativeMeasures({ measures: result.measures });
-        toast({ title: "Preventative Measures Generated", description: "Tips are ready for you." });
+        toast({ title: t('diagnose.toast.preventativeSuccessTitle'), description: t('diagnose.toast.preventativeSuccessDescription') });
       }
     } catch (err) {
       setError('Failed to fetch preventative measures.');
@@ -171,8 +173,8 @@ export default function DiagnosisForm() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
         <Card className="shadow-xl rounded-xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-2xl"><UploadCloud className="text-primary" /> Upload Crop Image</CardTitle>
-            <CardDescription>Provide an image and description of the affected crop to get an instant AI analysis.</CardDescription>
+            <CardTitle className="flex items-center gap-2 text-2xl"><UploadCloud className="text-primary" /> {t('diagnose.form.title')}</CardTitle>
+            <CardDescription>{t('diagnose.form.description')}</CardDescription>
           </CardHeader>
           <form onSubmit={form.handleSubmit(onSubmitDiagnosis)} className="space-y-6">
             <CardContent className="space-y-6">
@@ -181,7 +183,7 @@ export default function DiagnosisForm() {
                 name="image"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Crop Image</FormLabel>
+                    <FormLabel>{t('diagnose.form.imageLabel')}</FormLabel>
                     <FormControl>
                       <Input
                         type="file"
@@ -205,9 +207,9 @@ export default function DiagnosisForm() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description of Symptoms</FormLabel>
+                    <FormLabel>{t('diagnose.form.descriptionLabel')}</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="e.g., Yellow spots on leaves, wilting, etc." {...field} rows={4} disabled={isLoadingDiagnosis} />
+                      <Textarea placeholder={t('diagnose.form.descriptionPlaceholder')} {...field} rows={4} disabled={isLoadingDiagnosis} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -219,11 +221,11 @@ export default function DiagnosisForm() {
                 name="model"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>AI Model</FormLabel>
+                    <FormLabel>{t('diagnose.form.modelLabel')}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingDiagnosis}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a model for diagnosis" />
+                          <SelectValue placeholder={t('diagnose.form.modelPlaceholder')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -235,7 +237,7 @@ export default function DiagnosisForm() {
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      Different models may have varying performance and speed. 'Flash' is generally faster.
+                      {t('diagnose.form.modelDescription')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -246,7 +248,7 @@ export default function DiagnosisForm() {
             <CardFooter>
               <Button type="submit" disabled={isLoadingDiagnosis} className="w-full">
                 {isLoadingDiagnosis ? <LeafLoader size={16} className="mr-2" /> : <Brain className="mr-2 h-4 w-4" />}
-                Diagnose Crop
+                {t('diagnose.form.button')}
               </Button>
             </CardFooter>
           </form>
@@ -256,7 +258,7 @@ export default function DiagnosisForm() {
             {error && (
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
+                <AlertTitle>{t('common.error')}</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
@@ -264,13 +266,13 @@ export default function DiagnosisForm() {
             {diagnosis && (
               <Card className="shadow-xl rounded-xl">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl"><CheckCircle2 className="text-green-500"/>AI Diagnosis Result</CardTitle>
+                    <CardTitle className="flex items-center gap-2 text-2xl"><CheckCircle2 className="text-green-500"/>{t('diagnose.results.title')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p><strong>Disease:</strong> {diagnosis.disease}</p>
-                  <p><strong>Confidence:</strong> {(diagnosis.confidence * 100).toFixed(0)}%</p>
+                  <p><strong>{t('diagnose.results.disease')}:</strong> {diagnosis.disease}</p>
+                  <p><strong>{t('diagnose.results.confidence')}:</strong> {(diagnosis.confidence * 100).toFixed(0)}%</p>
                   <div>
-                    <strong>Treatment Recommendations:</strong>
+                    <strong>{t('diagnose.results.recommendations')}:</strong>
                     <div className="chat-prose mt-1">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {diagnosis.treatmentRecommendations}
@@ -284,41 +286,41 @@ export default function DiagnosisForm() {
             {diagnosis && (
                 <Card className="shadow-xl rounded-xl">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-2xl"><ShieldCheck className="text-blue-500"/>Preventative Measures</CardTitle>
+                        <CardTitle className="flex items-center gap-2 text-2xl"><ShieldCheck className="text-blue-500"/>{t('diagnose.preventative.title')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {isLoadingPreventative && (
                             <div className="flex items-center justify-center py-6">
                                 <LeafLoader size={24} />
-                                <p className="ml-2 text-muted-foreground">Generating tips...</p>
+                                <p className="ml-2 text-muted-foreground">{t('diagnose.preventative.loading')}</p>
                             </div>
                         )}
                         {!preventativeMeasures && !isLoadingPreventative && (
                             <div className="space-y-4">
-                                <CardDescription>Get AI-powered prevention tips for this crop.</CardDescription>
+                                <CardDescription>{t('diagnose.preventative.subtitle')}</CardDescription>
                                 <FormField
                                     control={form.control}
                                     name="cropType"
                                     render={({ field }) => (
-                                        <FormItem><FormLabel>Crop Type</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                                        <FormItem><FormLabel>{t('diagnose.preventative.cropTypeLabel')}</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
                                     name="season"
                                     render={({ field }) => (
-                                        <FormItem><FormLabel>Current Season</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                                        <FormItem><FormLabel>{t('diagnose.preventative.seasonLabel')}</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
                                     name="location"
                                     render={({ field }) => (
-                                        <FormItem><FormLabel>Location</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                                        <FormItem><FormLabel>{t('diagnose.preventative.locationLabel')}</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                                     )}
                                 />
                                 <Button onClick={handleGetPreventativeMeasures} className="w-full">
-                                    <ShieldCheck className="mr-2 h-4 w-4" /> Get Tips
+                                    <ShieldCheck className="mr-2 h-4 w-4" /> {t('diagnose.preventative.button')}
                                 </Button>
                             </div>
                         )}

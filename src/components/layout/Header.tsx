@@ -10,17 +10,9 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-
-const navItems = [
-  { href: '/', label: 'Home' },
-  { href: '/diagnose', label: 'AI Diagnose' },
-  { href: '/ask-expert', label: 'Ask Expert' },
-  { href: '/products', label: 'Products' },
-  { href: '/chatbot', label: 'Chatbot' },
-  { href: '/local-info', label: 'Local Info' },
-];
 
 const Logo = () => (
   <Link href="/" className="flex items-center gap-2 text-2xl font-headline text-primary hover:text-primary/80 transition-colors">
@@ -30,17 +22,27 @@ const Logo = () => (
 );
 
 const NavLinks = ({ className, itemClassName, onLinkClick, userRole }: { className?: string; itemClassName?: string; onLinkClick?: () => void; userRole?: string | null; }) => {
-  const allNavItems = [...navItems];
+  const { t } = useLanguage();
+
+  const navItems = [
+    { href: '/', label: t('header.home') },
+    { href: '/diagnose', label: t('header.aiDiagnose') },
+    { href: '/ask-expert', label: t('header.askExpert') },
+    { href: '/products', label: t('header.products') },
+    { href: '/chatbot', label: t('header.chatbot') },
+    { href: '/local-info', label: t('header.localInfo') },
+  ];
+
   if (userRole === 'admin') {
-    allNavItems.push({ href: '/admin', label: 'Admin Panel' });
+    navItems.push({ href: '/admin', label: t('header.adminPanel') });
   }
   if (userRole === 'expert') {
-    allNavItems.push({ href: '/expert', label: 'Expert Dashboard' });
+    navItems.push({ href: '/expert', label: t('header.expertDashboard') });
   }
 
   return (
     <nav className={cn("items-center space-x-4 lg:space-x-6", className)}>
-      {allNavItems.map((item) => (
+      {navItems.map((item) => (
         <Link
           key={item.label}
           href={item.href}
@@ -58,6 +60,7 @@ const NavLinks = ({ className, itemClassName, onLinkClick, userRole }: { classNa
 export default function Header() {
   const { currentUser, userProfile, logout, loading } = useAuth();
   const { cartCount } = useCart();
+  const { t, setLanguage } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   const handleLogout = async () => {
@@ -94,20 +97,20 @@ export default function Header() {
             <p className="text-xs leading-none text-muted-foreground">
               {currentUser?.email}
             </p>
-            {userProfile?.role && <p className="text-xs leading-none text-muted-foreground capitalize">Role: {userProfile.role}</p>}
+            {userProfile?.role && <p className="text-xs leading-none text-muted-foreground capitalize">{t('common.role')}: {userProfile.role}</p>}
           </div>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/profile">
             <UserCog className="mr-2 h-4 w-4" />
-            <span>My Profile & Orders</span>
+            <span>{t('header.myProfileAndOrders')}</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span>{t('header.logout')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -122,7 +125,7 @@ export default function Header() {
               {cartCount}
             </Badge>
           )}
-          <span className="sr-only">View Cart</span>
+          <span className="sr-only">{t('header.viewCart')}</span>
         </Link>
       </Button>
   );
@@ -140,10 +143,10 @@ export default function Header() {
           ) : (
             <>
               <Button variant="ghost" asChild>
-                <Link href="/login">Login</Link>
+                <Link href="/login">{t('header.login')}</Link>
               </Button>
               <Button asChild>
-                <Link href="/signup">Sign Up</Link>
+                <Link href="/signup">{t('header.signup')}</Link>
               </Button>
             </>
           )}
@@ -151,14 +154,14 @@ export default function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
                 <Globe className="h-5 w-5" />
-                <span className="sr-only">Select language</span>
+                <span className="sr-only">{t('header.selectLanguage')}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>English</DropdownMenuItem>
-              <DropdownMenuItem>मराठी (Marathi)</DropdownMenuItem>
-              <DropdownMenuItem disabled>Español (Soon)</DropdownMenuItem>
-              <DropdownMenuItem disabled>हिन्दी (Soon)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLanguage('en')}>{t('header.english')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLanguage('mr')}>{t('header.marathi')}</DropdownMenuItem>
+              <DropdownMenuItem disabled>{t('header.spanishSoon')}</DropdownMenuItem>
+              <DropdownMenuItem disabled>{t('header.hindiSoon')}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -169,7 +172,7 @@ export default function Header() {
              <UserAvatarButton />
           ) : (
             <Button size="sm" variant="ghost" asChild onClick={() => setMobileMenuOpen(false)}>
-                 <Link href="/login"><LogIn className="mr-2 h-4 w-4" />Login</Link>
+                 <Link href="/login"><LogIn className="mr-2 h-4 w-4" />{t('header.login')}</Link>
             </Button>
           )}
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -202,23 +205,23 @@ export default function Header() {
                         <p className="text-xs leading-none text-muted-foreground">
                           {currentUser?.email}
                         </p>
-                         {userProfile?.role && <p className="text-xs leading-none text-muted-foreground capitalize">Role: {userProfile.role}</p>}
+                         {userProfile?.role && <p className="text-xs leading-none text-muted-foreground capitalize">{t('common.role')}: {userProfile.role}</p>}
                       </div>
                     </div>
                      <Button variant="outline" className="w-full" asChild onClick={() => setMobileMenuOpen(false)}>
-                       <Link href="/profile"><UserCog className="mr-2 h-4 w-4" /> My Profile & Orders</Link>
+                       <Link href="/profile"><UserCog className="mr-2 h-4 w-4" />{t('header.myProfileAndOrders')}</Link>
                     </Button>
                     <Button variant="outline" className="w-full" onClick={() => { handleLogout(); setMobileMenuOpen(false); }}>
-                      <LogOut className="mr-2 h-4 w-4" /> Log out
+                      <LogOut className="mr-2 h-4 w-4" /> {t('header.logout')}
                     </Button>
                   </>
                 ) : (
                   <>
                     <Button variant="outline" className="w-full" asChild onClick={() => setMobileMenuOpen(false)}>
-                      <Link href="/login"><LogIn className="mr-2 h-4 w-4" />Login</Link>
+                      <Link href="/login"><LogIn className="mr-2 h-4 w-4" />{t('header.login')}</Link>
                     </Button>
                     <Button className="w-full" asChild onClick={() => setMobileMenuOpen(false)}>
-                      <Link href="/signup"><UserPlus className="mr-2 h-4 w-4" />Sign Up</Link>
+                      <Link href="/signup"><UserPlus className="mr-2 h-4 w-4" />{t('header.signup')}</Link>
                     </Button>
                   </>
                 )}
@@ -226,14 +229,14 @@ export default function Header() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="w-full justify-start">
                       <Globe className="mr-2 h-5 w-5" />
-                      Select Language
+                      {t('header.selectLanguage')}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-[calc(280px-2*theme(spacing.6))]">
-                    <DropdownMenuItem>English</DropdownMenuItem>
-                     <DropdownMenuItem>मराठी (Marathi)</DropdownMenuItem>
-                    <DropdownMenuItem disabled>Español (Soon)</DropdownMenuItem>
-                    <DropdownMenuItem disabled>हिन्दी (Soon)</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLanguage('en')}>{t('header.english')}</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLanguage('mr')}>{t('header.marathi')}</DropdownMenuItem>
+                    <DropdownMenuItem disabled>{t('header.spanishSoon')}</DropdownMenuItem>
+                    <DropdownMenuItem disabled>{t('header.hindiSoon')}</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

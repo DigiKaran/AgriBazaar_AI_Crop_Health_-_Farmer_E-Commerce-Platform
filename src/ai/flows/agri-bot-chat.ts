@@ -19,6 +19,7 @@ const AgriBotChatInputSchema = z.object({
     role: z.enum(['user', 'model']),
     parts: z.array(z.object({text: z.string()}))
   })).describe('The history of the conversation.'),
+  language: z.enum(['en', 'mr']).optional().default('en').describe('The language for the response.'),
 });
 type AgriBotChatInput = z.infer<typeof AgriBotChatInputSchema>;
 
@@ -39,15 +40,19 @@ const agriBotChatFlow = ai.defineFlow(
     inputSchema: AgriBotChatInputSchema,
     outputSchema: AgriBotChatOutputSchema,
   },
-  async ({ message, history }) => {
+  async ({ message, history, language }) => {
+
+    const languageInstruction = language === 'mr' 
+        ? "You must answer in Marathi." 
+        : "You must answer in English.";
 
     const systemInstruction = `You are AgriBot, a friendly and knowledgeable AI assistant for AgriBazaar, a platform dedicated to helping farmers in India. Your expertise is in Indian agriculture.
+- ${languageInstruction}
 - Provide accurate, concise, and practical advice.
 - If a question is outside the scope of farming, politely state that you can only answer agriculture-related queries.
 - Keep responses relatively short and easy to understand for a general audience.
 - You can answer questions about crop diseases, fertilizers, pesticides, seeds, farming equipment, preventative measures, localized tips, and government schemes for farmers in India.
-- Never provide medical or financial advice. For complex issues, always recommend consulting a local agricultural expert or authority.
-- Answer in the same language as the user's message if you can confidently detect it (e.g., Hindi, Marathi), otherwise default to English.`;
+- Never provide medical or financial advice. For complex issues, always recommend consulting a local agricultural expert or authority.`;
 
     const { text } = await ai.generate({
         system: systemInstruction,
