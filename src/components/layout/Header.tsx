@@ -160,8 +160,8 @@ export default function Header() {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => setLanguage('en')}>{t('header.english')}</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setLanguage('mr')}>{t('header.marathi')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLanguage('hi')}>{t('header.hindi')}</DropdownMenuItem>
               <DropdownMenuItem disabled>{t('header.spanishSoon')}</DropdownMenuItem>
-              <DropdownMenuItem disabled>{t('header.hindiSoon')}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -235,8 +235,8 @@ export default function Header() {
                   <DropdownMenuContent align="start" className="w-[calc(280px-2*theme(spacing.6))]">
                     <DropdownMenuItem onClick={() => setLanguage('en')}>{t('header.english')}</DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setLanguage('mr')}>{t('header.marathi')}</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLanguage('hi')}>{t('header.hindi')}</DropdownMenuItem>
                     <DropdownMenuItem disabled>{t('header.spanishSoon')}</DropdownMenuItem>
-                    <DropdownMenuItem disabled>{t('header.hindiSoon')}</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

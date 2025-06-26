@@ -136,7 +136,7 @@ export interface Order extends OrderBase {
 export interface AgriBotChatInput {
   message: string;
   history: ChatMessageHistory[];
-  language?: 'en' | 'mr';
+  language?: 'en' | 'mr' | 'hi';
 }
 
 export interface AgriBotChatOutput {

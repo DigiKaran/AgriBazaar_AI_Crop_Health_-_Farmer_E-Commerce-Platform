@@ -19,7 +19,7 @@ const AgriBotChatInputSchema = z.object({
     role: z.enum(['user', 'model']),
     parts: z.array(z.object({text: z.string()}))
   })).describe('The history of the conversation.'),
-  language: z.enum(['en', 'mr']).optional().default('en').describe('The language for the response.'),
+  language: z.enum(['en', 'mr', 'hi']).optional().default('en').describe('The language for the response.'),
 });
 type AgriBotChatInput = z.infer<typeof AgriBotChatInputSchema>;
 
@@ -42,9 +42,12 @@ const agriBotChatFlow = ai.defineFlow(
   },
   async ({ message, history, language }) => {
 
-    const languageInstruction = language === 'mr' 
-        ? "You must answer in Marathi." 
-        : "You must answer in English.";
+    let languageInstruction = "You must answer in English.";
+    if (language === 'mr') {
+        languageInstruction = "You must answer in Marathi.";
+    } else if (language === 'hi') {
+        languageInstruction = "You must answer in Hindi.";
+    }
 
     const systemInstruction = `You are AgriBot, a friendly and knowledgeable AI assistant for AgriBazaar, a platform dedicated to helping farmers in India. Your expertise is in Indian agriculture.
 - ${languageInstruction}

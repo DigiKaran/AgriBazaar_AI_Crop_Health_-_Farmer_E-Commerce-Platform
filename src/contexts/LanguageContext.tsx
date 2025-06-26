@@ -3,8 +3,9 @@
 import { createContext, useContext, useState, useEffect, type ReactNode, useMemo } from 'react';
 import enTranslations from '@/locales/en.json';
 import mrTranslations from '@/locales/mr.json';
+import hiTranslations from '@/locales/hi.json';
 
-type Language = 'en' | 'mr';
+type Language = 'en' | 'mr' | 'hi';
 
 interface LanguageContextType {
   language: Language;
@@ -15,6 +16,7 @@ interface LanguageContextType {
 const translations = {
   en: enTranslations,
   mr: mrTranslations,
+  hi: hiTranslations,
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -32,7 +34,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const storedLang = localStorage.getItem('agriBazaarLanguage') as Language | null;
-    if (storedLang && ['en', 'mr'].includes(storedLang)) {
+    if (storedLang && ['en', 'mr', 'hi'].includes(storedLang)) {
       setLanguage(storedLang);
     }
   }, []);
