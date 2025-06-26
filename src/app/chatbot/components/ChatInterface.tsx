@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, type FormEvent } from 'react';
@@ -175,12 +176,9 @@ export default function ChatInterface() {
                     </AvatarFallback>
                   </>
                 ) : (
-                  <>
-                    <AvatarImage src="https://placehold.co/40x40.png" alt="AgriBot" data-ai-hint="robot mascot" />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      <Bot size={18}/>
-                    </AvatarFallback>
-                  </>
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    <Bot size={18}/>
+                  </AvatarFallback>
                 )}
               </Avatar>
               <div
@@ -213,7 +211,6 @@ export default function ChatInterface() {
           {isLoading && (
             <div className="flex items-end gap-2 max-w-[75%] mr-auto">
               <Avatar className="h-8 w-8">
-                 <AvatarImage src="https://placehold.co/40x40.png" alt="AgriBot is typing" data-ai-hint="robot mascot" />
                  <AvatarFallback className='bg-primary text-primary-foreground'><Bot size={18}/></AvatarFallback>
               </Avatar>
               <div className="rounded-lg px-3 py-2 text-sm shadow bg-secondary text-secondary-foreground rounded-bl-none">
