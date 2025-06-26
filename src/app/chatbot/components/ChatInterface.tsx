@@ -168,7 +168,7 @@ export default function ChatInterface() {
               )}
             >
               <Avatar className="h-8 w-8">
-                <AvatarImage src={msg.sender === 'user' ? currentUser?.photoURL || undefined : "https://placehold.co/40x40.png?text=AI"} />
+                <AvatarImage src={msg.sender === 'user' ? currentUser?.photoURL || undefined : "https://placehold.co/40x40.png"} {...(msg.sender === 'bot' ? { 'data-ai-hint': 'friendly robot' } : {})} />
                 <AvatarFallback className={cn(msg.sender === 'bot' ? 'bg-primary text-primary-foreground' : 'bg-accent text-accent-foreground')}>
                   {msg.sender === 'user' ? <User size={18}/> : <Bot size={18}/>}
                 </AvatarFallback>
@@ -203,7 +203,7 @@ export default function ChatInterface() {
           {isLoading && (
             <div className="flex items-end gap-2 max-w-[75%] mr-auto">
               <Avatar className="h-8 w-8">
-                 <AvatarImage src="https://placehold.co/40x40.png?text=AI" />
+                 <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="friendly robot" />
                  <AvatarFallback className='bg-primary text-primary-foreground'><Bot size={18}/></AvatarFallback>
               </Avatar>
               <div className="rounded-lg px-3 py-2 text-sm shadow bg-secondary text-secondary-foreground rounded-bl-none">
