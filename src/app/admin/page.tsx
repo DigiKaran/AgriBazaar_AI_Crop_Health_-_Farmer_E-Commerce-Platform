@@ -59,9 +59,12 @@ export default function AdminPage() {
         <p className="text-muted-foreground mt-2">Platform overview, user management, and system settings.</p>
       </header>
       
-      {currentUser && <AdminStatsCards adminUserId={currentUser.uid} />}
+      <section>
+        <h2 className="text-2xl font-headline mb-4">Live Platform Statistics</h2>
+        {currentUser && <AdminStatsCards adminUserId={currentUser.uid} />}
+      </section>
 
-      <Card className="shadow-lg rounded-xl">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Users className="h-6 w-6 text-primary"/>User Management</CardTitle>
           <CardDescription>View users and manage their roles and status (active/inactive).</CardDescription>
@@ -72,7 +75,7 @@ export default function AdminPage() {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card className="shadow-lg rounded-xl">
+        <Card>
           <CardHeader>
             <CardTitle className="text-xl flex items-center gap-2"><ShoppingBasket className="h-6 w-6 text-primary"/>Marketplace</CardTitle>
              <CardDescription>Manage products, categories, and orders.</CardDescription>
@@ -89,7 +92,7 @@ export default function AdminPage() {
               </Button>
           </CardContent>
         </Card>
-         <Card className="shadow-lg rounded-xl">
+         <Card>
           <CardHeader>
             <CardTitle className="text-xl flex items-center gap-2"><BookOpen className="h-6 w-6 text-primary"/>Content & Queries</CardTitle>
              <CardDescription>Oversee expert interactions and platform content.</CardDescription>
@@ -101,7 +104,7 @@ export default function AdminPage() {
               <Button variant="outline" disabled><FileText className="mr-2 h-5 w-5"/>Manage Articles</Button>
           </CardContent>
         </Card>
-        <Card className="shadow-lg rounded-xl">
+        <Card>
           <CardHeader>
             <CardTitle className="text-xl flex items-center gap-2"><Wrench className="h-6 w-6 text-primary"/>System</CardTitle>
             <CardDescription>Configure system-wide settings and data.</CardDescription>
