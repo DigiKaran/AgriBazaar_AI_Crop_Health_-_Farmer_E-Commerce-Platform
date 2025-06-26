@@ -88,10 +88,15 @@ export default {
             height: '0',
           },
         },
+        'grow-and-sway': {
+          '0%, 100%': { transform: 'scale(0.8) rotate(-10deg)', opacity: '0.7' },
+          '50%': { transform: 'scale(1.2) rotate(10deg)', opacity: '1' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'grow-and-sway': 'grow-and-sway 2s ease-in-out infinite',
       },
     },
   },

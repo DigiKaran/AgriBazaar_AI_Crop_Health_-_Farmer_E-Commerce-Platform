@@ -12,11 +12,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Loader2, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { placeOrderAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { ShippingAddress } from '@/types';
 import Image from 'next/image';
+import { LeafLoader } from '@/components/ui/leaf-loader';
 
 const shippingAddressSchema = z.object({
   fullName: z.string().min(3, "Full name must be at least 3 characters"),
@@ -98,7 +99,7 @@ export default function CheckoutPage() {
   if (authLoading || !currentUser || cartItems.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-10rem)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <LeafLoader size={48} />
       </div>
     );
   }
@@ -147,7 +148,7 @@ export default function CheckoutPage() {
                      )} />
                   </div>
                    <Button type="submit" disabled={isSubmitting} className="w-full" size="lg">
-                    {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+                    {isSubmitting ? <LeafLoader size={20} className="mr-2" /> : null}
                     Place Order (Cash on Delivery)
                   </Button>
                 </form>

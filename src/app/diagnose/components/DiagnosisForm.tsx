@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, UploadCloud, AlertTriangle, CheckCircle2, Brain, ShieldCheck } from 'lucide-react';
+import { UploadCloud, AlertTriangle, CheckCircle2, Brain, ShieldCheck } from 'lucide-react';
 import type { DiagnosisResult, PreventativeMeasuresResult } from '@/types';
 import { diagnoseCropAction, generatePreventativeMeasuresAction } from '@/lib/actions';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LeafLoader } from '@/components/ui/leaf-loader';
 
 
 const diagnosisFormSchema = z.object({
@@ -244,7 +245,7 @@ export default function DiagnosisForm() {
             </CardContent>
             <CardFooter>
               <Button type="submit" disabled={isLoadingDiagnosis} className="w-full">
-                {isLoadingDiagnosis ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Brain className="mr-2 h-4 w-4" />}
+                {isLoadingDiagnosis ? <LeafLoader size={16} className="mr-2" /> : <Brain className="mr-2 h-4 w-4" />}
                 Diagnose Crop
               </Button>
             </CardFooter>
@@ -288,7 +289,7 @@ export default function DiagnosisForm() {
                     <CardContent>
                         {isLoadingPreventative && (
                             <div className="flex items-center justify-center py-6">
-                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                <LeafLoader size={24} />
                                 <p className="ml-2 text-muted-foreground">Generating tips...</p>
                             </div>
                         )}

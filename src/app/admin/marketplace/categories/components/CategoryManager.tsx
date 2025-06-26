@@ -12,7 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Trash2, PlusCircle, AlertTriangle } from 'lucide-react';
+import { Trash2, PlusCircle, AlertTriangle } from 'lucide-react';
+import { LeafLoader } from '@/components/ui/leaf-loader';
 
 interface CategoryManagerProps {
     adminUserId: string;
@@ -78,7 +79,7 @@ export default function CategoryManager({ adminUserId }: CategoryManagerProps) {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-6">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <LeafLoader size={24} />
                 <p className="ml-2 text-muted-foreground">Loading categories...</p>
             </div>
         );
@@ -106,7 +107,7 @@ export default function CategoryManager({ adminUserId }: CategoryManagerProps) {
                     className="flex-grow"
                 />
                 <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
+                    {isSubmitting ? <LeafLoader size={16} /> : <PlusCircle className="h-4 w-4" />}
                     <span className="ml-2 hidden sm:inline">Add</span>
                 </Button>
             </form>
@@ -124,7 +125,7 @@ export default function CategoryManager({ adminUserId }: CategoryManagerProps) {
                                 aria-label={`Delete ${category.name}`}
                             >
                                 {deletingId === category.id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin text-destructive" />
+                                    <LeafLoader size={16} className="text-destructive" />
                                 ) : (
                                     <Trash2 className="h-4 w-4 text-destructive/70 hover:text-destructive" />
                                 )}

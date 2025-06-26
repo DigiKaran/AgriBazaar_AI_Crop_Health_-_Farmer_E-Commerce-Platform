@@ -11,12 +11,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, UploadCloud, AlertTriangle, CheckCircle2, UserCheck, Send } from 'lucide-react';
+import { UploadCloud, AlertTriangle, CheckCircle2, UserCheck, Send } from 'lucide-react';
 import { submitDirectExpertQueryAction } from '@/lib/actions';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { uploadImageForDiagnosis } from '@/lib/firebase/storage';
+import { LeafLoader } from '@/components/ui/leaf-loader';
 
 const directQueryFormSchema = z.object({
   image: z.custom<FileList>((val) => val instanceof FileList && val.length > 0, 'Please upload an image of the crop.'),
@@ -167,7 +168,7 @@ export default function DirectExpertQueryForm() {
               </CardContent>
               <CardFooter>
                 <Button type="submit" disabled={!currentUser || isLoading} className="w-full">
-                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                  {isLoading ? <LeafLoader size={16} className="mr-2" /> : <Send className="mr-2 h-4 w-4" />}
                   Send Query to Expert
                 </Button>
               </CardFooter>

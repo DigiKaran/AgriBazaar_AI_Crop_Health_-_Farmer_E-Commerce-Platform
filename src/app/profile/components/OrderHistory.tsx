@@ -5,11 +5,12 @@ import { useState, useEffect } from 'react';
 import type { Order } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUserOrdersAction } from '@/lib/actions';
-import { Loader2, AlertTriangle, Inbox, ListOrdered, Package, CheckCircle, Truck, XCircle } from 'lucide-react';
+import { AlertTriangle, Inbox, ListOrdered, Package, CheckCircle, Truck, XCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
+import { LeafLoader } from '@/components/ui/leaf-loader';
 
 const statusConfig = {
     placed: { label: "Placed", icon: Package, color: "bg-blue-500" },
@@ -47,7 +48,7 @@ export default function OrderHistory() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-10">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <LeafLoader size={32} />
         <p className="ml-2 text-muted-foreground">Loading your order history...</p>
       </div>
     );

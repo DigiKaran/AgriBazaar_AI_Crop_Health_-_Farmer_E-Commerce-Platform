@@ -11,10 +11,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, UserPlus, AlertTriangle } from 'lucide-react';
+import { UserPlus, AlertTriangle } from 'lucide-react';
 import { signUpWithEmailPassword, signInWithGoogle } from '@/lib/firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import { LeafLoader } from '@/components/ui/leaf-loader';
 
 const signupFormSchema = z.object({
   displayName: z.string().min(2, "Name must be at least 2 characters."),
@@ -165,7 +166,7 @@ export default function SignupForm() {
             {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
           </div>
           <Button type="submit" disabled={isLoading || isGoogleLoading} className="w-full">
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+            {isLoading ? <LeafLoader size={16} className="mr-2" /> : <UserPlus className="mr-2 h-4 w-4" />}
             Create Account with Email
           </Button>
         </CardContent>
@@ -182,7 +183,7 @@ export default function SignupForm() {
           </div>
         </div>
         <Button variant="outline" onClick={handleGoogleSignUp} disabled={isLoading || isGoogleLoading} className="w-full">
-          {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
+          {isGoogleLoading ? <LeafLoader size={16} className="mr-2" /> : <GoogleIcon />}
           Sign up with Google
         </Button>
       </div>

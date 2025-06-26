@@ -7,7 +7,7 @@ import { getPendingOrdersAction, updateOrderStatusAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, AlertTriangle, Inbox, CheckCircle, PackageCheck } from 'lucide-react';
+import { AlertTriangle, Inbox, CheckCircle, PackageCheck } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
@@ -16,7 +16,8 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion"
+} from "@/components/ui/accordion";
+import { LeafLoader } from '@/components/ui/leaf-loader';
 
 interface OrderManagementProps {
   adminUserId: string;
@@ -62,7 +63,7 @@ export default function OrderManagement({ adminUserId }: OrderManagementProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-10">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <LeafLoader size={32} />
         <p className="ml-2 text-muted-foreground">Loading pending orders...</p>
       </div>
     );
@@ -142,7 +143,7 @@ export default function OrderManagement({ adminUserId }: OrderManagementProps) {
                     onClick={() => handleApproveOrder(order.id)}
                     disabled={updatingId === order.id}
                   >
-                  {updatingId === order.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-4 w-4" />}
+                  {updatingId === order.id ? <LeafLoader size={16} className="mr-2" /> : <PackageCheck className="mr-2 h-4 w-4" />}
                   Approve
                 </Button>
               </TableCell>

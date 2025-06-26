@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from "@/components/ui/table";
-import { Loader2, AlertTriangle, PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { AlertTriangle, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -34,7 +34,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { LeafLoader } from '@/components/ui/leaf-loader';
 
 const productFormSchema = z.object({
   name: z.string().min(3, 'Product name must be at least 3 characters.'),
@@ -142,7 +143,7 @@ export default function ProductManagement({ adminUserId }: ProductManagementProp
   };
   
   if (isLoading) {
-    return <div className="flex items-center justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    return <div className="flex items-center justify-center py-10"><LeafLoader size={32} /></div>;
   }
   if (error) {
     return <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>;
@@ -195,7 +196,7 @@ export default function ProductManagement({ adminUserId }: ProductManagementProp
                 <DialogFooter>
                     <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
                     <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {isSubmitting && <LeafLoader size={16} className="mr-2" />}
                         {editingProduct ? 'Save Changes' : 'Add Product'}
                     </Button>
                 </DialogFooter>

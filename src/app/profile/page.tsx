@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import UpdateProfileForm from './components/UpdateProfileForm';
 import OrderHistory from './components/OrderHistory';
-import { Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { LeafLoader } from '@/components/ui/leaf-loader';
 
 export default function ProfilePage() {
   const { currentUser, loading } = useAuth();
@@ -21,8 +21,9 @@ export default function ProfilePage() {
 
   if (loading || !currentUser) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <LeafLoader size={48} />
+        <p className="mt-4 text-muted-foreground">Loading Profile...</p>
       </div>
     );
   }

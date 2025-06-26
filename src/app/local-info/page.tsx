@@ -8,10 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { MapPin, Cloud, Sun, Wind, Droplets, Lightbulb, Thermometer, Loader2, AlertTriangle, Search, LocateFixed, CalendarDays, Zap, CloudSun, CloudRain, CloudDrizzle } from 'lucide-react';
+import { MapPin, Cloud, Sun, Wind, Droplets, Lightbulb, Thermometer, AlertTriangle, Search, LocateFixed, CalendarDays, Zap, CloudSun, CloudRain, CloudDrizzle } from 'lucide-react';
 import type { WeatherData, LocalizedFarmingTip, LocalizedFarmingTipsOutput } from '@/types';
 import { getLocalizedFarmingTipsAction } from '@/lib/actions';
 import { cn } from '@/lib/utils';
+import { LeafLoader } from '@/components/ui/leaf-loader';
 
 
 // Mock Indian locations for simulated reverse geocoding
@@ -188,10 +189,10 @@ export default function LocalInfoPage() {
             />
             <div className="flex gap-2 w-full sm:w-auto">
               <Button type="submit" disabled={isLoading || isGpsLoading} className="w-1/2 sm:w-auto">
-                {isLoading && !isGpsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Search
+                {isLoading && !isGpsLoading ? <LeafLoader size={16} className="mr-2" /> : <Search className="mr-2 h-4 w-4" />} Search
               </Button>
               <Button variant="outline" onClick={handleDetectLocation} disabled={isLoading || isGpsLoading} className="w-1/2 sm:w-auto">
-                {isGpsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LocateFixed className="mr-2 h-4 w-4" />} Use GPS
+                {isGpsLoading ? <LeafLoader size={16} className="mr-2" /> : <LocateFixed className="mr-2 h-4 w-4" />} Use GPS
               </Button>
             </div>
           </form>
@@ -211,7 +212,7 @@ export default function LocalInfoPage() {
 
       {isLoading && !weatherData && (
         <div className="text-center py-10">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <LeafLoader size={48} className="mx-auto mb-4" />
           <p className="text-muted-foreground">Fetching local data...</p>
         </div>
       )}
@@ -258,7 +259,7 @@ export default function LocalInfoPage() {
 
         {(isLoading && weatherData) && ( 
            <Card className="shadow-xl rounded-xl flex flex-col justify-center items-center min-h-[300px]">
-             <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
+             <LeafLoader size={40} className="mb-3" />
              <p className="text-muted-foreground">Fetching AI farming tips...</p>
            </Card>
         )}
@@ -331,6 +332,5 @@ export default function LocalInfoPage() {
 }
 
 const LucideReact = {
-  Sun, CloudSun, CloudRain, Cloud, CloudDrizzle, Wind, Thermometer, Lightbulb, Droplets, CalendarDays, Zap, MapPin, Search, LocateFixed, AlertTriangle, Loader2
+  Sun, CloudSun, CloudRain, Cloud, CloudDrizzle, Wind, Thermometer, Lightbulb, Droplets, CalendarDays, Zap, MapPin, Search, LocateFixed, AlertTriangle,
 };
-

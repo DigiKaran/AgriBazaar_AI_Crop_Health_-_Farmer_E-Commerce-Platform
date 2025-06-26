@@ -10,10 +10,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, User, Save, AlertTriangle } from 'lucide-react';
+import { User, Save, AlertTriangle } from 'lucide-react';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { updateUserProfileAction } from '@/lib/actions';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { LeafLoader } from '@/components/ui/leaf-loader';
 
 
 const profileFormSchema = z.object({
@@ -64,7 +65,7 @@ export default function UpdateProfileForm() {
     return (
         <Card className="shadow-lg rounded-xl">
             <CardHeader><CardTitle>My Profile</CardTitle></CardHeader>
-            <CardContent><Loader2 className="h-6 w-6 animate-spin" /></CardContent>
+            <CardContent><LeafLoader size={24} /></CardContent>
         </Card>
     )
   }
@@ -109,7 +110,7 @@ export default function UpdateProfileForm() {
           </CardContent>
           <CardFooter>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              {isSubmitting ? <LeafLoader size={16} className="mr-2" /> : <Save className="mr-2 h-4 w-4" />}
               Save Changes
             </Button>
           </CardFooter>

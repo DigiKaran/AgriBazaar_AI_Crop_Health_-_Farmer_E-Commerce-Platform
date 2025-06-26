@@ -10,12 +10,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCap
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, AlertTriangle, Inbox, CheckCircle, Edit3, Eye, User, Brain } from 'lucide-react';
+import { AlertTriangle, Inbox, CheckCircle, Edit3, Eye, User, Brain } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
+import { LeafLoader } from '@/components/ui/leaf-loader';
 
 
 interface ExpertQueryManagementProps {
@@ -97,7 +98,7 @@ export default function ExpertQueryManagement({ reviewerUserId }: ExpertQueryMan
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-10">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <LeafLoader size={32} />
         <p className="ml-2 text-muted-foreground">Loading pending queries...</p>
       </div>
     );
@@ -235,7 +236,7 @@ export default function ExpertQueryManagement({ reviewerUserId }: ExpertQueryMan
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsReviewDialogOpen(false)} disabled={isSubmittingReview}>Cancel</Button>
               <Button onClick={handleReviewSubmit} disabled={isSubmittingReview}>
-                {isSubmittingReview ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />} 
+                {isSubmittingReview ? <LeafLoader size={16} className="mr-2" /> : <CheckCircle className="mr-2 h-4 w-4" />} 
                 Submit Review
               </Button>
             </DialogFooter>

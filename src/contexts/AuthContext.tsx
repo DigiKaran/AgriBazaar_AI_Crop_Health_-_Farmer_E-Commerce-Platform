@@ -7,7 +7,7 @@ import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import type { UserProfile } from '@/types';
 import { getUserProfile } from '@/lib/firebase/auth';
-import { Loader2 } from 'lucide-react';
+import { LeafLoader } from '@/components/ui/leaf-loader';
 
 interface AuthContextType {
   currentUser: FirebaseUser | null;
@@ -81,9 +81,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4 text-lg text-muted-foreground">Initializing Session...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+        <LeafLoader size={64} />
+        <p className="mt-4 text-lg text-muted-foreground">Initializing Session...</p>
       </div>
     );
   }

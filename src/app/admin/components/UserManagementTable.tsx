@@ -8,12 +8,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Loader2, ShieldCheck, Save, UserCog, UserCheck, UserX } from 'lucide-react';
+import { ShieldCheck, Save, UserCog, UserCheck, UserX } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatDistanceToNow } from 'date-fns';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { LeafLoader } from '@/components/ui/leaf-loader';
 
 interface UserManagementTableProps {
   adminUserId: string;
@@ -86,7 +87,7 @@ export default function UserManagementTable({ adminUserId }: UserManagementTable
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-10">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <LeafLoader size={32} />
         <p className="ml-2 text-muted-foreground">Loading user data...</p>
       </div>
     );
@@ -185,7 +186,7 @@ export default function UserManagementTable({ adminUserId }: UserManagementTable
                   variant="outline"
                 >
                   {isBeingUpdated ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <LeafLoader size={16} />
                   ) : (
                     <Save className="h-4 w-4" />
                   )}

@@ -7,8 +7,9 @@ import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ShieldAlert, Loader2, Settings } from 'lucide-react';
+import { ShieldAlert, Settings } from 'lucide-react';
 import CategoryManager from './components/CategoryManager';
+import { LeafLoader } from '@/components/ui/leaf-loader';
 
 export default function ManageCategoriesPage() {
   const { userProfile, loading, currentUser } = useAuth();
@@ -23,7 +24,7 @@ export default function ManageCategoriesPage() {
   if (loading) {
     return (
       <div className="container mx-auto py-8 px-4 text-center flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <LeafLoader size={48} className="mb-4" />
         Loading category manager...
       </div>
     );
