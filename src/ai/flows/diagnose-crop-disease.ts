@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -59,7 +58,7 @@ const diagnoseCropDiseaseFlow = ai.defineFlow(
     outputSchema: DiagnoseCropDiseaseOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input, { model: ai.model(input.model) });
+    const {output} = await prompt(input, { model: input.model });
     return output!;
   }
 );
